@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tuveuxvivreou — Trouvez votre commune idéale</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Palette pastel chaleureuse */
+  --bg:#F4F1EC;
+  --bg2:#EAE6DE;
+  --bg3:#E2DDD4;
+  --white:#FDFCF9;
+  --text:#1C1C1A;
+  --text2:#6A6760;
+  --text3:#9A9790;
+  --green:#1A6B4A;
+  --green-light:#E6F2EB;
+  --green-mid:#2D9E6B;
+  --green-pale:#D4EBE0;
+  --amber:#B87A14;
+  --amber-light:#FBF0DC;
+  --amber-pale:#F5E6C4;
+  --red:#B83232;
+  --red-light:#FBEAEA;
+  --blue-pale:#E8EEF8;
+  --blue-mid:#4A7CC7;
+  --sage:#7A9E8E;
+  --sage-light:#EBF2EE;
+  --border:#DDD9D0;
+  --border2:#CBC6BB;
+  --radius:10px;
+  --radius-lg:14px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.screen{display:none}.screen.active{display:block}
+
+/* NAV */
+nav{background:var(--white);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,0.04)}
+.logo{font-family:'DM Serif Display',serif;font-size:20px;color:var(--green);letter-spacing:-0.02em;cursor:pointer}
+.logo span{color:var(--text3);font-size:11px;font-family:'DM Mono',monospace;margin-left:5px}
+.nav-links{display:flex;align-items:center;gap:18px}
+.nav-link{font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;cursor:pointer;transition:color 0.15s}
+.nav-link:hover{color:var(--text)}
+.nav-cta{background:var(--green);color:#fff;font-size:12px;padding:7px 16px;border-radius:20px;font-family:'DM Mono',monospace;border:none;cursor:pointer;transition:background 0.15s}
+.nav-cta:hover{background:var(--green-mid)}
+.nav-search{position:relative;flex:0 1 280px;max-width:280px}
+.nav-search-input{width:100%;padding:7px 32px 7px 32px;font-size:12px;font-family:'DM Mono',monospace;border:1px solid var(--border2);border-radius:20px;background:var(--bg);color:var(--text);outline:none;transition:all 0.15s}
+.nav-search-input:focus{background:var(--white);border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(45,158,107,0.1)}
+.nav-search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text3);pointer-events:none}
+.nav-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text3);cursor:pointer;display:none;padding:2px 6px;border-radius:50%;line-height:1}
+.nav-search-clear:hover{background:var(--bg2);color:var(--text)}
+.nav-search-clear.show{display:block}
+.nav-search-dd{position:absolute;top:calc(100%+6px);left:0;right:0;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius);z-index:200;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.12);max-height:320px;overflow-y:auto}
+.nav-search-dd.open{display:block}
+.nav-search-item{padding:9px 14px;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);transition:background 0.1s}
+.nav-search-item:last-child{border-bottom:none}
+.nav-search-item:hover,.nav-search-item.active{background:var(--green-light);color:var(--green)}
+.nav-search-item-name{font-weight:500}
+.nav-search-item-dept{font-size:10px;color:var(--text3)}
+.nav-search-empty{padding:14px;font-size:11px;color:var(--text3);text-align:center;font-family:'DM Mono',monospace}
+
+/* LANDING */
+.landing{min-height:calc(100vh - 56px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3rem 2rem}
+.landing-tag{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green);font-size:11px;font-family:'DM Mono',monospace;padding:5px 12px;border-radius:20px;margin-bottom:2rem;border:1px solid var(--green-pale)}
+.landing-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green-mid)}
+.landing h1{font-family:'DM Serif Display',serif;font-size:52px;line-height:1.05;letter-spacing:-0.03em;margin-bottom:1.25rem;max-width:560px}
+.landing h1 em{font-style:italic;color:var(--green)}
+.landing-sub{font-size:17px;color:var(--text2);max-width:440px;line-height:1.6;font-weight:300;margin-bottom:3rem}
+.start-btn{padding:22px 64px;font-size:18px;font-family:'DM Mono',monospace;background:var(--green);color:#fff;border:none;border-radius:var(--radius-lg);cursor:pointer;font-weight:500;letter-spacing:0.02em;box-shadow:0 6px 32px rgba(26,107,74,0.35),0 2px 8px rgba(26,107,74,0.2);transition:background 0.2s,transform 0.2s,box-shadow 0.2s;animation:pulse-cta 3s ease-in-out infinite;position:relative;overflow:hidden}
+.start-btn::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent);transform:skewX(-20deg);transition:none;pointer-events:none}
+.start-btn:hover{background:var(--green-mid);transform:translateY(-3px) scale(1.03);box-shadow:0 14px 48px rgba(26,107,74,0.45),0 4px 16px rgba(26,107,74,0.3);animation:none}
+.start-btn:hover::before{animation:shimmer 0.6s ease forwards}
+.start-btn:active{transform:translateY(-1px) scale(1.01);box-shadow:0 6px 24px rgba(26,107,74,0.35)}
+@keyframes pulse-cta{0%,100%{box-shadow:0 6px 32px rgba(26,107,74,0.35),0 2px 8px rgba(26,107,74,0.2);transform:translateY(0)}50%{box-shadow:0 8px 40px rgba(26,107,74,0.5),0 4px 12px rgba(26,107,74,0.3);transform:translateY(-2px)}}
+@keyframes shimmer{0%{left:-100%}100%{left:160%}}
+.expert-link-wrap{margin-top:3.5rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+.expert-link{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;cursor:pointer;opacity:0.7}
+.expert-link:hover{color:var(--text2);opacity:1}
+.expert-link-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;opacity:0.6}
+.reassurance{display:flex;gap:24px;margin-top:3rem;flex-wrap:wrap;justify-content:center}
+.reas-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);font-family:'DM Mono',monospace}
+.reas-dot{width:5px;height:5px;border-radius:50%;background:var(--green-mid);flex-shrink:0}
+
+.landing-skyline{width:100%;max-width:720px;margin:2.5rem auto 0;opacity:1;pointer-events:none;display:block}
+@keyframes skyline-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.landing-skyline{animation:skyline-in 1.4s ease-out 0.4s both}
+.landing-sources{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1rem}
+
+/* ONBOARDING */
+.onb-wrap{max-width:600px;margin:0 auto;padding:2.5rem 2rem}
+.onb-back{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:2rem;padding:7px 14px;border:1px solid var(--border);border-radius:20px;background:var(--white);font-family:'DM Mono',monospace;transition:all 0.12s}
+.onb-back:hover{border-color:var(--border2);color:var(--text)}
+.onb-progress{display:flex;gap:6px;margin-bottom:2rem}
+.onb-dot{flex:1;height:3px;border-radius:2px;background:var(--border);transition:background 0.3s}
+.onb-dot.done{background:var(--green-mid)}
+.onb-dot.active{background:var(--green-mid);opacity:0.4}
+.onb-q{font-family:'DM Serif Display',serif;font-size:24px;letter-spacing:-0.02em;margin-bottom:6px}
+.onb-hint{font-size:13px;color:var(--text2);margin-bottom:1.5rem}
+.onb-opts{display:grid;gap:8px}
+.onb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.onb-opt{display:flex;align-items:center;gap:12px;padding:13px 15px;border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;background:var(--white);transition:all 0.15s}
+.onb-opt:hover{border-color:var(--green-mid);background:var(--green-light)}
+.onb-opt.sel{border:2px solid var(--green-mid);background:var(--green-light)}
+.onb-opt.sel .opt-ico{background:var(--green-mid);color:#fff}
+.opt-ico{width:36px;height:36px;border-radius:var(--radius);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;transition:all 0.15s}
+.opt-lbl{font-size:13px;font-weight:500;color:var(--text)}
+.opt-sub{font-size:11px;color:var(--text2);margin-top:2px;font-family:'DM Mono',monospace}
+.onb-cta{width:100%;padding:14px;font-size:14px;font-family:'DM Mono',monospace;background:var(--green);color:#fff;border:none;border-radius:var(--radius-lg);cursor:pointer;margin-top:1.5rem;font-weight:500;transition:all 0.15s;opacity:0.35;pointer-events:none}
+.onb-cta.ready{opacity:1;pointer-events:auto;box-shadow:0 4px 16px rgba(26,107,74,0.25)}
+.onb-cta.ready:hover{background:var(--green-mid)}
+.onb-skip{text-align:center;margin-top:12px;font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.onb-skip:hover{color:var(--text)}
+
+/* EXPERT */
+.expert-wrap{max-width:900px;margin:0 auto;padding:1.5rem 2rem 3rem}
+.mode-switch{margin-bottom:1.5rem}
+.mode-btn{font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;cursor:pointer;padding:6px 12px;border:1px solid var(--border);border-radius:20px;background:var(--white);transition:all 0.12s}
+.mode-btn:hover{border-color:var(--border2);color:var(--text)}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
+.field-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.search-input{width:100%;padding:10px 14px;font-size:13px;font-family:'DM Mono',monospace;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;transition:border-color 0.15s}
+.search-input:focus{border-color:var(--green-mid);background:var(--white)}
+.dd-wrap{position:relative}
+.dd-menu{position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius);z-index:50;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+.dd-menu.open{display:block}
+.dd-item{padding:10px 14px;font-size:13px;font-family:'DM Mono',monospace;cursor:pointer;display:flex;justify-content:space-between;border-bottom:1px solid var(--border);transition:background 0.1s}
+.dd-item:last-child{border-bottom:none}
+.dd-item:hover{background:var(--bg)}
+.dd-item span{font-size:11px;color:var(--text3)}
+.commune-pill{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green);font-size:12px;font-family:'DM Mono',monospace;padding:5px 11px;border-radius:20px;margin-top:8px;border:1px solid var(--green-pale)}
+.commune-pill .x{cursor:pointer;margin-left:4px;font-size:14px}
+.seg{display:flex;border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;background:var(--bg)}
+.seg-btn{flex:1;padding:9px 6px;font-size:12px;font-family:'DM Mono',monospace;background:transparent;border:none;cursor:pointer;color:var(--text2);transition:all 0.15s;text-align:center}
+.seg-btn.on{background:var(--white);color:var(--green);font-weight:500}
+.seg-btn+.seg-btn{border-left:1px solid var(--border2)}
+.region-sel{width:100%;padding:10px 14px;font-size:13px;font-family:'DM Mono',monospace;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none}
+.tog{width:30px;height:17px;border-radius:20px;background:var(--border2);position:relative;transition:background 0.2s;flex-shrink:0}
+.tog.on{background:var(--green-mid)}
+.tog-t{position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left 0.2s}
+.tog.on .tog-t{left:15px}
+.radius-chips{display:none;flex-wrap:wrap;gap:5px;margin-top:8px}
+.radius-chips.open{display:flex}
+.rchip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border2);cursor:pointer;background:transparent;color:var(--text2);font-family:'DM Mono',monospace;transition:all 0.12s}
+.rchip.on{background:var(--amber-pale);color:var(--amber);border-color:rgba(184,122,20,0.3)}
+.leg{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.lg-s{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-family:'DM Mono',monospace}
+.lg-d{width:9px;height:9px;border-radius:50%}
+.lg-sep{font-size:10px;color:var(--border2)}
+.lg-h{font-size:10px;color:var(--text2);background:var(--bg2);border:1px solid var(--border);padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace}
+.sec-divider{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;font-family:'DM Mono',monospace}
+.sec-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:7px;margin-bottom:5px}
+.cat{border:1px solid var(--border);border-radius:var(--radius);padding:11px 8px;cursor:pointer;transition:all 0.15s;text-align:center;background:var(--bg)}
+.cat:hover{border-color:var(--border2);background:var(--white)}
+.cat.p1{border:1.5px solid var(--green-mid);background:var(--green-light)}
+.cat.p2{border:1.5px solid var(--amber);background:var(--amber-pale)}
+.cat-i{font-size:20px;display:block;margin-bottom:4px}
+.cat-n{font-size:11px;font-weight:500;color:var(--text);font-family:'DM Mono',monospace}
+.cat-s{font-size:10px;color:var(--text2);line-height:1.3;margin-top:2px}
+.cat-b{font-size:9px;padding:2px 6px;border-radius:10px;margin-top:5px;display:inline-block;font-family:'DM Mono',monospace}
+.cb1{background:var(--green-light);color:var(--green)}
+.cb2{background:var(--amber-pale);color:var(--amber)}
+.crit-det{border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:var(--bg);display:none;margin-top:8px}
+.crit-det.open{display:block}
+.det-sec{margin-bottom:12px}
+.det-sec:last-child{margin-bottom:0}
+.det-st{font-size:11px;font-weight:500;margin-bottom:7px;font-family:'DM Mono',monospace}
+.det-items{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.det-item{display:flex;align-items:flex-start;gap:6px;cursor:pointer}
+.chk{width:14px;height:14px;border:1px solid var(--border2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;background:var(--white);flex-shrink:0;margin-top:1px;transition:all 0.12s}
+.chk.on{background:var(--green-mid);border-color:var(--green-mid);color:#fff}
+.det-name{font-size:11px;color:var(--text);line-height:1.35}
+.more-tog{display:flex;align-items:center;justify-content:space-between;padding:11px 1.5rem;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.03)}
+.more-tog:hover{border-color:var(--border2)}
+.more-badge{background:var(--blue-pale);color:var(--blue-mid);font-size:10px;padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace}
+.chev{font-size:10px;color:var(--text3);transition:transform 0.2s}
+.chev.open{transform:rotate(180deg)}
+.more-panel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:12px;display:none;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
+.more-panel.open{display:block}
+.esec{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin:14px 0 8px;font-family:'DM Mono',monospace}
+.esec:first-child{margin-top:0}
+.sl-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sl-lbl{font-size:11px;color:var(--text);width:160px;flex-shrink:0;line-height:1.3;font-family:'DM Mono',monospace}
+.sl-row input[type=range]{flex:1;accent-color:var(--green-mid)}
+.sl-val{font-size:11px;font-weight:500;width:26px;text-align:right;font-family:'DM Mono',monospace}
+.flt-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.flt-f label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;font-family:'DM Mono',monospace}
+.flt-f select,.flt-f input[type=number]{width:100%;padding:8px 10px;font-size:12px;font-family:'DM Mono',monospace;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none}
+.go-btn{width:100%;padding:14px;font-size:14px;font-family:'DM Mono',monospace;background:var(--green);color:#fff;border:none;border-radius:var(--radius-lg);cursor:pointer;letter-spacing:0.03em;font-weight:500;transition:background 0.15s;box-shadow:0 4px 16px rgba(26,107,74,0.2)}
+.go-btn:hover{background:var(--green-mid)}
+.go-btn.loading{background:rgba(26,107,74,0.5);cursor:not-allowed}
+.go-btn.disabled{background:var(--bg2);color:var(--text3);cursor:not-allowed;box-shadow:none;border:1px solid var(--border)}
+.go-btn.disabled:hover{background:var(--bg2)}
+.reset-btn{padding:7px 14px;font-size:11px;font-family:'DM Mono',monospace;background:transparent;border:1px solid var(--border2);border-radius:20px;cursor:pointer;color:var(--text2);transition:all 0.15s}
+.reset-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-light)}
+.res-wrap{display:none;margin-top:12px}
+.res-wrap.open{display:block}
+.tabs{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;background:var(--bg)}
+.rtab{flex:1;padding:10px;font-size:12px;font-family:'DM Mono',monospace;background:transparent;border:none;cursor:pointer;color:var(--text2);text-align:center;transition:all 0.12s}
+.rtab.on{background:var(--white);color:var(--text);font-weight:500}
+.rtab+.rtab{border-left:1px solid var(--border)}
+.tbadge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--green-mid);color:#fff;font-size:9px;margin-left:5px;vertical-align:middle}
+.rpanel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:none;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
+.rpanel.on{display:block}
+.rh{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.rt{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text)}
+.rc2{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.notice{font-size:11px;color:var(--text2);background:var(--sage-light);border-radius:var(--radius);padding:8px 12px;margin-bottom:14px;border-left:2px solid var(--sage);font-family:'DM Mono',monospace}
+.rlist-header{display:grid;grid-template-columns:minmax(0,1fr) 72px 72px 72px 82px 68px;gap:8px;padding:6px 14px 6px 14px;margin-bottom:4px;align-items:center}
+.rh-col{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);font-family:'DM Mono',monospace;cursor:pointer;display:flex;align-items:center;gap:3px;transition:color 0.12s;white-space:nowrap;justify-content:flex-end}
+.rh-col:hover{color:var(--text)}
+.rh-col.asc::after{content:'↑';color:var(--green)}
+.rh-col.desc::after{content:'↓';color:var(--green)}
+.rcard{border:1px solid var(--border);border-radius:var(--radius-lg);padding:11px 14px;margin-bottom:6px;display:grid;grid-template-columns:minmax(0,1fr) 72px 72px 72px 82px 68px;gap:8px;align-items:center;transition:all 0.15s;cursor:pointer;background:var(--bg)}
+.rcard:hover{border-color:var(--green-mid);background:var(--white);box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+.rcard:last-child{margin-bottom:0}
+.rcard.top{border-left:3px solid var(--green-mid);border-radius:0 var(--radius-lg) var(--radius-lg) 0;background:var(--green-light)}
+.rcard.top:hover{background:var(--white)}
+.rcol{text-align:right}
+.rcol-v{font-size:12px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text)}
+.rcol-s{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1px}
+.rrank{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:3px}
+.rname{font-size:15px;font-weight:500;font-family:'DM Serif Display',serif;color:var(--text)}
+.rmeta{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-bottom:8px}
+.rstats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
+.rstat{background:var(--white);border-radius:7px;padding:6px 8px;border:1px solid var(--border)}
+.rsl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;font-family:'DM Mono',monospace}
+.rsv{font-size:12px;font-weight:500;font-family:'DM Mono',monospace}
+.rsv.up{color:var(--green)}.rsv.down{color:var(--red)}
+.scol{text-align:right;position:relative}
+.snum{font-size:20px;font-weight:500;color:var(--green);line-height:1;font-family:'DM Serif Display',serif}
+.slbl{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+.sbar{width:40px;height:3px;background:var(--border);border-radius:2px;margin-top:6px;margin-left:auto;overflow:hidden}
+.sfill{height:100%;border-radius:2px;background:var(--green-mid)}
+.acol{display:flex;flex-direction:column;gap:5px;align-items:stretch;width:80px}
+.ibtn{height:30px;border-radius:8px;border:1.5px solid var(--border2);background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;transition:all 0.15s;color:var(--text2);padding:0 6px;white-space:nowrap;font-weight:500;width:100%}
+.ibtn:hover{background:var(--bg2);border-color:var(--border2);transform:translateY(-1px)}
+.ibtn-icon{font-size:12px;line-height:1}
+.ibtn-lbl{font-size:9px;line-height:1}
+.ibtn.fav{background:var(--amber-light);border-color:var(--amber);color:var(--amber)}
+.ibtn.fav:hover{background:var(--amber-pale)}
+.ibtn.cmp{background:var(--blue-pale);border-color:var(--blue-mid);color:var(--blue-mid)}
+.ibtn.cmp:hover{background:#dce7f7}
+.cmp-tooltip{position:absolute;bottom:calc(100% + 6px);right:0;width:200px;background:var(--text);color:#fff;font-size:10px;font-family:'DM Mono',monospace;padding:7px 10px;border-radius:8px;z-index:300;line-height:1.5;pointer-events:none;opacity:0;transition:opacity 0.15s;box-shadow:0 4px 16px rgba(0,0,0,0.18);text-align:left;white-space:normal}
+.cmp-tooltip::after{content:'';position:absolute;top:100%;right:10px;border:5px solid transparent;border-top-color:var(--text)}
+.ibtn.cmp:hover .cmp-tooltip{opacity:1}
+.ibtn-cmp-icon{display:flex;align-items:flex-end;gap:2px;height:13px}
+.ibtn-cmp-icon span{display:block;background:currentColor;border-radius:1px;opacity:0.85}
+.ctags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.ctag{font-size:9px;padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace}
+.fav-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.fav-item:last-child{border-bottom:none}
+.fn{font-size:13px;font-weight:500;font-family:'DM Serif Display',serif}
+.fm{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace}
+.fs{font-size:15px;font-weight:500;color:var(--green);font-family:'DM Mono',monospace}
+.frem{cursor:pointer;color:var(--text3);padding:3px 7px;font-size:14px;border-radius:6px;transition:all 0.12s}
+.frem:hover{color:var(--red);background:var(--red-light)}
+.empty-s{text-align:center;padding:2.5rem;font-size:13px;color:var(--text2);line-height:1.7}
+.empty-s span{font-size:28px;display:block;margin-bottom:10px}
+.cmp-table{overflow-x:auto}
+.cmp-table table{width:100%;border-collapse:collapse;font-size:12px}
+.cmp-table th{padding:10px 14px;background:var(--bg);border:1px solid var(--border);font-weight:500;text-align:left;font-family:'DM Mono',monospace}
+.cmp-table td{padding:10px 14px;border:1px solid var(--border);font-family:'DM Mono',monospace}
+.cmp-table .rl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;background:var(--bg)}
+.best-c{background:var(--green-light);color:var(--green);font-weight:500}
+.worst-c{background:var(--red-light);color:var(--red)}
+
+/* FICHE */
+#view-fiche{padding:1.5rem 2rem 3rem;max-width:900px;margin:0 auto}
+.back-btn{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:1.5rem;padding:7px 14px;border:1px solid var(--border);border-radius:20px;background:var(--white);font-family:'DM Mono',monospace;transition:all 0.12s}
+.back-btn:hover{border-color:var(--border2);color:var(--text)}
+.fhero{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
+.fhero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
+.fhero-name{font-family:'DM Serif Display',serif;font-size:28px;letter-spacing:-0.02em;margin-bottom:4px}
+.fhero-sub{font-size:12px;color:var(--text2);font-family:'DM Mono',monospace}
+.fhero-badges{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.fbadge{font-size:10px;padding:4px 10px;border-radius:20px;font-family:'DM Mono',monospace}
+.score-big-n{font-family:'DM Serif Display',serif;font-size:52px;color:var(--green);line-height:1;text-align:right}
+.score-big-l{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-align:right;margin-top:2px}
+.score-big-bar{width:90px;height:4px;background:var(--border);border-radius:2px;margin-top:8px;margin-left:auto;overflow:hidden}
+.score-big-fill{height:100%;border-radius:2px;background:var(--green-mid)}
+.fkpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.fkpi{background:var(--bg);border-radius:var(--radius);padding:12px 14px}
+.fkpi-l{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;font-family:'DM Mono',monospace}
+.fkpi-v{font-size:18px;font-weight:500;font-family:'DM Mono',monospace}
+.fkpi-v.up{color:var(--green)}
+.fkpi-s{font-size:10px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace}
+.fsec{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
+.ftabs{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;background:var(--bg)}
+.ftab{flex:1;padding:9px;font-size:12px;font-family:'DM Mono',monospace;background:transparent;border:none;cursor:pointer;color:var(--text2);text-align:center;transition:all 0.12s}
+.ftab.on{background:var(--white);color:var(--text);font-weight:500}
+.ftab+.ftab{border-left:1px solid var(--border)}
+.politic-section{margin-bottom:14px}
+.politic-title{font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.politic-mayor{display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px}
+.politic-mayor-avatar{width:40px;height:40px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.politic-mayor-name{font-size:14px;font-weight:500;color:var(--text);font-family:'DM Sans',sans-serif}
+.politic-mayor-sub{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px}
+.politic-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:20px;font-size:10px;font-family:'DM Mono',monospace;font-weight:500;margin-top:4px}
+.politic-notice{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;font-style:italic;padding:8px 12px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:14px;line-height:1.5}
+.vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.vote-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px}
+.vote-card-title{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:10px}
+.vote-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.vote-color{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.vote-label{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vote-bar-wrap{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.vote-bar-fill{height:100%;border-radius:3px;transition:width 0.6s ease}
+.vote-pct{font-size:11px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);min-width:32px;text-align:right}
+.vote-participation{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg);border-radius:var(--radius);margin-top:8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2)}
+.tendance-strip{display:flex;gap:6px;align-items:center;padding:10px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.tendance-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.tendance-label{font-size:11px;color:var(--text);font-family:'DM Sans',sans-serif;flex:1}
+.tendance-years{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+.ftc{display:none}.ftc.on{display:block}
+.ind-cat-t{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 8px;font-family:'DM Mono',monospace}
+.ind-cat-t:first-child{margin-top:0}
+.ind-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:7px}
+.ind{padding:11px 13px;background:var(--white);border-radius:var(--radius);border:1px solid var(--border);position:relative;display:flex;flex-direction:column;gap:5px}
+.ind-label-row{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.ind-l{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;gap:4px;flex:1;min-width:0}
+.ind-l span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ind-v{font-size:15px;font-weight:600;color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.1}
+.ind-eval{display:flex;align-items:center;gap:5px;margin-top:1px}
+.ind-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ind-n{font-size:10px;font-family:'DM Mono',monospace;font-weight:500}
+/* Tooltip popup — système JS global */
+.tip-popup{display:none}
+#gtip{position:fixed;background:var(--text);color:#fff;font-size:10px;font-family:'DM Mono',monospace;padding:8px 10px;border-radius:8px;z-index:9999;line-height:1.5;pointer-events:none;max-width:260px;box-shadow:0 4px 16px rgba(0,0,0,0.22);display:none}
+#gtip::after{content:'';position:absolute;top:100%;left:14px;border:5px solid transparent;border-top-color:var(--text)}
+.ind-tip{width:18px;height:18px;border-radius:50%;background:var(--sage-light);color:var(--green);font-size:10px;display:inline-flex;align-items:center;justify-content:center;cursor:help;flex-shrink:0;font-family:'DM Mono',monospace;transition:all 0.15s;font-weight:700;vertical-align:middle;border:1.5px solid var(--sage)}
+.ind-tip:hover{background:var(--green-mid);color:#fff;border-color:var(--green-mid);transform:scale(1.1)}
+.chart-wrap{position:relative;height:170px}
+.risq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.risq{padding:11px 13px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg)}
+.risq-l{font-size:10px;color:var(--text2);margin-bottom:5px;font-family:'DM Mono',monospace}
+.risq-v{font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace}
+.dok{width:8px;height:8px;border-radius:50%;background:var(--green-mid);flex-shrink:0}
+.dwarn{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0}
+.dbad{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0}
+.avis-list{display:flex;flex-direction:column;gap:8px}
+.avis{background:var(--bg);border-radius:var(--radius);padding:12px 14px;border-left:3px solid transparent}
+.avis.g{border-left-color:var(--green-mid)}.avis.a{border-left-color:var(--amber)}
+.avis-t{font-size:12px;font-weight:500;margin-bottom:4px;font-family:'DM Mono',monospace}
+.avis-tx{font-size:12px;color:var(--text2);line-height:1.6}
+.map-ph{background:var(--bg);border-radius:var(--radius);height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text2);font-size:12px;border:1px dashed var(--border2);font-family:'DM Mono',monospace}
+#map-leaflet{height:220px;border-radius:var(--radius);border:1px solid var(--border);overflow:hidden}
+.radar-wrap{position:relative;height:200px;max-width:280px;margin:0 auto 12px}
+/* Alerte prix */
+.alert-banner{background:var(--amber-light);border:1px solid var(--amber-pale);border-radius:var(--radius);padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px}
+.alert-banner-icon{font-size:18px;flex-shrink:0}
+.alert-input-row{display:flex;align-items:center;gap:7px;margin-top:8px}
+.alert-input-row input{padding:7px 10px;font-size:12px;font-family:'DM Mono',monospace;border:1px solid var(--border2);border-radius:var(--radius);background:var(--white);width:110px;color:var(--text)}
+.alert-btn{padding:7px 12px;font-size:11px;font-family:'DM Mono',monospace;background:var(--amber);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-weight:500}
+.alert-btn:hover{background:#A06A10}
+/* Surprise-moi */
+.surprise-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;font-size:13px;font-family:'DM Mono',monospace;background:var(--white);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius-lg);cursor:pointer;transition:all 0.18s;font-weight:500}
+.surprise-btn:hover{border-color:var(--green-mid);color:var(--green);background:var(--green-light);transform:translateY(-1px);box-shadow:0 4px 16px rgba(26,107,74,0.12)}
+/* Compare delta */
+.delta-pos{color:var(--green);font-size:9px;font-family:'DM Mono',monospace;margin-top:1px}
+.delta-neg{color:var(--red);font-size:9px;font-family:'DM Mono',monospace;margin-top:1px}
+/* Vs ma commune */
+.vs-wrap{background:var(--blue-pale);border:1px solid rgba(74,124,199,0.2);border-radius:var(--radius);padding:12px 14px;margin-top:8px}
+.vs-title{font-size:10px;color:var(--blue-mid);text-transform:uppercase;letter-spacing:0.07em;font-family:'DM Mono',monospace;margin-bottom:6px}
+
+.cta-g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fcta{padding:11px;font-size:12px;font-family:'DM Mono',monospace;border-radius:var(--radius);cursor:pointer;text-align:center;transition:all 0.15s;font-weight:500}
+.fcta-p{background:var(--green);color:#fff;border:none}
+.fcta-p:hover{background:var(--green-mid)}
+.fcta-s{background:transparent;color:var(--text);border:1px solid var(--border2)}
+.fcta-s:hover{border-color:var(--green-mid);color:var(--green)}
+.filters-tog{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;margin-bottom:0;box-shadow:0 2px 10px rgba(0,0,0,0.04);transition:all 0.15s}
+.filters-tog:hover{border-color:var(--green-mid);box-shadow:0 4px 16px rgba(0,0,0,0.08)}
+.filters-panel{display:none;padding:12px 0 0}
+.filters-panel.open{display:block}
+/* Budget card — bloc dédié bien visible */
+.budget-card{background:linear-gradient(135deg,#FCF8E9 0%,#F8EFD2 100%);border:1.5px solid var(--amber-pale);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin:14px 0 12px;box-shadow:0 2px 12px rgba(184,122,20,0.08);position:relative;overflow:hidden}
+.budget-card::before{content:'';position:absolute;top:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(184,122,20,0.06) 0%,transparent 70%);pointer-events:none}
+.budget-card-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);margin-bottom:4px;letter-spacing:-0.01em}
+.budget-card-sub{font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.5}
+.bud-calc-box{padding:9px 10px;font-size:14px;font-family:'DM Mono',monospace;font-weight:700;background:var(--green-light);border:1.5px solid var(--green-mid);border-radius:var(--radius);color:var(--green);text-align:center;display:flex;align-items:center;justify-content:center}
+/* Carte ma situation actuelle */
+.situation-card{background:linear-gradient(135deg,#EEF2FB 0%,#DCE5F6 100%);border:1.5px solid rgba(74,124,199,0.25);border-radius:var(--radius-lg);padding:1.1rem 1.4rem;margin:0 0 12px;box-shadow:0 2px 12px rgba(74,124,199,0.08);position:relative}
+.situation-card-title{font-family:'DM Serif Display',serif;font-size:17px;color:var(--text);letter-spacing:-0.01em}
+.situation-card-sub{font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.5}
+.cur-pill{display:inline-flex;align-items:center;gap:6px;background:var(--white);color:var(--blue-mid);font-size:12px;font-family:'DM Mono',monospace;padding:5px 11px;border-radius:20px;border:1px solid rgba(74,124,199,0.3);font-weight:500}
+.cur-pill .x{cursor:pointer;margin-left:4px;font-size:14px;color:var(--text3);transition:color 0.15s}
+.cur-pill .x:hover{color:var(--red)}
+
+/* Bassins de vie chips */
+.bassin-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.bassin-chip{font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--border2);background:var(--white);color:var(--text2);cursor:pointer;font-family:'DM Mono',monospace;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px}
+.bassin-chip:hover{border-color:var(--green-mid);color:var(--green);background:var(--green-light)}
+.bassin-chip.on{background:var(--green-light);color:var(--green);border-color:var(--green-mid);font-weight:500}
+
+/* Score explicable */
+.score-explain{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-top:10px}
+.score-explain-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;margin-bottom:10px}
+.score-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12px;font-family:'DM Mono',monospace;border-bottom:1px dotted var(--border)}
+.score-row:last-child{border-bottom:none}
+.score-row-name{color:var(--text2);display:flex;align-items:center;gap:6px}
+.score-row-pct{color:var(--text);font-weight:500}
+.score-explain-prose{font-size:12px;color:var(--text2);line-height:1.55;margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:var(--radius);border-left:3px solid var(--green-mid)}
+
+/* Delta vs commune actuelle dans cards résultats */
+.cur-delta{display:inline-block;font-size:9px;font-family:'DM Mono',monospace;padding:1px 6px;border-radius:8px;margin-left:5px;font-weight:500}
+.cur-delta.pos{background:var(--green-light);color:var(--green)}
+.cur-delta.neg{background:var(--red-light);color:var(--red)}
+.cur-delta.eq{background:var(--bg2);color:var(--text3)}
+/* Format ligne séparée — option B "↑ 1200€ vs Lyon" */
+.cur-delta-line{display:block;margin-top:3px;font-size:9px;font-family:'DM Mono',monospace;font-weight:500;line-height:1.3;letter-spacing:0.01em}
+.cur-delta-line.pos{color:var(--green)}
+.cur-delta-line.neg{color:var(--red)}
+.cur-delta-line.eq{color:var(--text3)}
+.cur-delta-line .arr{font-size:11px;font-weight:700;display:inline-block;margin-right:1px}
+.cur-delta-line .ref{opacity:0.75;font-weight:400}
+footer{border-top:1px solid var(--border);padding:2rem;text-align:center;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2rem;background:var(--white)}
+footer a{color:var(--text2);text-decoration:none}
+
+/* ================================
+   MOBILE RESPONSIVE
+   ================================ */
+@media (max-width: 768px) {
+  /* NAV */
+  nav{padding:0 12px;height:auto;min-height:56px;flex-wrap:wrap;gap:8px;padding:8px 12px}
+  .logo{font-size:17px;flex:0 0 auto}
+  .logo span{display:none}
+  .nav-search{order:3;flex:1 1 100%;max-width:100%;margin-top:4px}
+  .nav-links{flex:0 0 auto;gap:8px}
+  .nav-link{display:none}
+  .nav-cta{font-size:11px;padding:5px 11px}
+
+  /* LANDING */
+  .landing{padding:2rem 1rem}
+  .landing h1{font-size:36px}
+  .landing-sub{font-size:15px;max-width:100%}
+  .start-btn{padding:18px 28px;font-size:16px;width:100%;max-width:340px}
+  .reassurance{gap:12px;margin-top:1.5rem}
+  .reas-item{font-size:11px}
+  .landing-skyline{margin-top:1.5rem}
+
+  /* ONBOARDING */
+  .onb-wrap{padding:1.5rem 1rem}
+  .onb-q{font-size:20px}
+  .onb-grid{grid-template-columns:1fr}
+  .onb-opt{padding:11px 13px}
+
+  /* EXPERT */
+  .expert-wrap{padding:1rem 12px 2rem}
+
+  /* BUDGET CARD */
+  .budget-card{padding:1rem 1.1rem}
+  .budget-card-title{font-size:16px}
+  .budget-card-sub{font-size:11px}
+  .budget-card .flt-grid{grid-template-columns:1fr !important;gap:10px !important}
+
+  /* RESULTATS */
+  .rh{flex-direction:column;align-items:flex-start;gap:8px}
+  .rh > div:last-child{flex-wrap:wrap}
+  .surprise-btn{padding:8px 14px;font-size:12px}
+  .rlist-header{display:none}
+  .rcard{grid-template-columns:1fr;gap:10px;padding:14px}
+  .rcol{display:flex;justify-content:space-between;align-items:center;text-align:left}
+  .rcol::before{content:attr(data-label);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace}
+  .acol{flex-direction:row;width:100%}
+  .scol{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:10px;margin-top:4px}
+  .scol::before{content:'Score';font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace}
+  .sbar{margin-left:0;margin-top:4px;width:60px}
+
+  /* FILTRES */
+  .filters-tog{padding:12px 14px}
+  .flt-grid{grid-template-columns:1fr !important;gap:10px !important}
+
+  /* CRITERES catégories */
+  .cat-grid{grid-template-columns:repeat(2,1fr)}
+  .det-items{grid-template-columns:1fr}
+  .leg{font-size:10px}
+
+  /* TABS résultats */
+  .tabs{flex-direction:row}
+  .rtab{padding:9px 4px;font-size:10px}
+
+  /* FICHE */
+  #view-fiche{padding:1rem 12px 2rem}
+  .fhero{padding:1.1rem}
+  .fhero-top{flex-direction:column;align-items:stretch;gap:14px}
+  .fhero-name{font-size:24px}
+  .score-big-n{font-size:42px;text-align:left}
+  .score-big-l, .score-big-bar{text-align:left;margin-left:0}
+  .fkpis{grid-template-columns:repeat(2,1fr)}
+  .fsec{padding:1.1rem}
+  .ftabs{flex-wrap:wrap}
+  .ftab{flex:1 1 calc(50% - 1px);font-size:11px;padding:9px 6px}
+  .ftab+.ftab{border-left:none}
+
+  /* INDICATEURS */
+  .ind-grid{grid-template-columns:1fr}
+  .risq-grid{grid-template-columns:repeat(2,1fr)}
+
+  /* COMPARAISON / VS */
+  .vs-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .vs-wrap table{min-width:480px}
+  .cmp-table{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .cmp-table table{min-width:520px}
+
+  /* CARTE */
+  #map-leaflet{height:200px}
+
+  /* RADAR */
+  .radar-wrap{max-width:100%;height:240px}
+
+  /* BUTTONS CTA fiche */
+  .cta-g{grid-template-columns:1fr;gap:6px}
+
+  /* TOOLTIP */
+  #gtip{font-size:11px;max-width:calc(100vw - 32px);padding:9px 12px}
+
+  /* INDIC TIPS plus gros sur mobile pour tap facile */
+  .ind-tip{width:22px;height:22px;font-size:11px}
+
+  /* POLITIQUE */
+  .vote-grid{grid-template-columns:1fr}
+}
+
+/* Très petits écrans (< 380px) */
+@media (max-width: 380px) {
+  .landing h1{font-size:30px}
+  .fkpis{grid-template-columns:1fr}
+  .cat-grid{grid-template-columns:1fr}
+  .risq-grid{grid-template-columns:1fr}
+  .ftab{flex:1 1 100%}
+  .ftab+.ftab{border-left:1px solid var(--border)}
+}
+
+@media print {
+  nav, .back-btn, .ftabs, .fcta, footer, #gtip, .cta-g, .fsec:has(.cta-g){display:none !important}
+  body{background:#fff !important}
+  .ftc{display:block !important;page-break-inside:avoid;margin-bottom:1rem}
+  .ftc:not(.on){border-top:1px dashed #ccc;padding-top:1rem;margin-top:1rem}
+  .fhero, .fsec{box-shadow:none !important;page-break-inside:avoid}
+  #map-leaflet{display:none}
+}
+</style>
+</head>
+<body>
+<div id="gtip"></div>
+<nav>
+  <div class="logo" onclick="goLanding()">tuveuxvivreou <span>bêta</span></div>
+  <div class="nav-search">
+    <span class="nav-search-icon">🔍</span>
+    <input type="text" class="nav-search-input" id="navSearch" placeholder="Rechercher une commune…" autocomplete="off" oninput="navSearchIn(this.value)" onkeydown="navSearchKey(event)" onfocus="if(this.value)navSearchIn(this.value)"/>
+    <span class="nav-search-clear" id="navSearchClear" onclick="navSearchClear()">×</span>
+    <div class="nav-search-dd" id="navSearchDd"></div>
+  </div>
+  <div class="nav-links">
+    <span class="nav-link" onclick="goOnboarding()">Démarrage guidé</span>
+    <span class="nav-link" onclick="goExpert()">Mode expert</span>
+    <button class="nav-cta" style="opacity:0.4;cursor:not-allowed;pointer-events:none" title="Fonctionnalité à venir">Créer un compte</button>
+  </div>
+</nav>
+
+<!-- LANDING -->
+<div class="screen active" id="screen-landing">
+  <div class="landing">
+    <div class="landing-tag">Données officielles françaises</div>
+    <h1>Tu veux vivre <em>où</em> ?</h1>
+    <p class="landing-sub">Trouve ta commune idéale en France selon ce qui compte vraiment pour toi — sécurité, santé, prix, risques climatiques et bien plus.</p>
+    <button class="start-btn" onclick="goOnboarding()">Commencer → trouver ma commune</button>
+    <div class="reassurance">
+      <div class="reas-item"><div class="reas-dot"></div>Gratuit</div>
+      <div class="reas-item"><div class="reas-dot"></div>3 questions seulement</div>
+      <div class="reas-item"><div class="reas-dot"></div>Données officielles</div>
+      <div class="reas-item"><div class="reas-dot"></div>Sans inscription</div>
+    </div>
+<svg class="landing-skyline" viewBox="0 0 1000 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#DDD8C0"/>
+      <stop offset="50%" stop-color="#EDE8D4"/>
+      <stop offset="100%" stop-color="#C8C4AE"/>
+    </linearGradient>
+    <linearGradient id="stone1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E2D8B8"/><stop offset="100%" stop-color="#C8BA90"/>
+    </linearGradient>
+    <linearGradient id="stone2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D8CEAE"/><stop offset="100%" stop-color="#B8AA82"/>
+    </linearGradient>
+    <linearGradient id="stone3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8E0C4"/><stop offset="100%" stop-color="#CEBF98"/>
+    </linearGradient>
+    <linearGradient id="zinc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8898A8"/><stop offset="100%" stop-color="#687888"/>
+    </linearGradient>
+    <linearGradient id="zinc2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#78909A"/><stop offset="100%" stop-color="#586878"/>
+    </linearGradient>
+    <linearGradient id="eiffel" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0%" stop-color="#8C9CA8"/><stop offset="100%" stop-color="#5C6C78"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D8B030"/><stop offset="60%" stop-color="#B08820"/><stop offset="100%" stop-color="#805808"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8AB8C8"/><stop offset="100%" stop-color="#6898A8"/>
+    </linearGradient>
+    <linearGradient id="tree" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#4A8038"/><stop offset="100%" stop-color="#2A5A20"/>
+    </linearGradient>
+    <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#B0A888"/><stop offset="100%" stop-color="#887860"/>
+    </linearGradient>
+    <filter id="sh" x="-4%" y="-4%" width="115%" height="125%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#00000014"/>
+    </filter>
+  </defs>
+
+  <!-- CIEL chaud crème -->
+  <rect width="1000" height="240" fill="url(#sky)"/>
+
+  <!-- Nuages volumétriques crème — style illustration -->
+  <g opacity="0.9">
+    <ellipse cx="130" cy="48" rx="90" ry="38" fill="#F2ECD8"/>
+    <ellipse cx="92" cy="62" rx="58" ry="28" fill="#EEE8D0"/>
+    <ellipse cx="172" cy="60" rx="52" ry="26" fill="#EEE8D0"/>
+    <ellipse cx="130" cy="36" rx="64" ry="28" fill="#F8F4E8"/>
+    <ellipse cx="94" cy="44" rx="42" ry="22" fill="#F8F4E8"/>
+    <ellipse cx="164" cy="42" rx="38" ry="20" fill="#F8F4E8"/>
+  </g>
+  <g opacity="0.82">
+    <ellipse cx="760" cy="40" rx="96" ry="36" fill="#F2ECD8"/>
+    <ellipse cx="716" cy="56" rx="62" ry="26" fill="#EEE8D0"/>
+    <ellipse cx="808" cy="54" rx="54" ry="24" fill="#EEE8D0"/>
+    <ellipse cx="760" cy="28" rx="68" ry="28" fill="#F8F4E8"/>
+    <ellipse cx="718" cy="38" rx="44" ry="20" fill="#F8F4E8"/>
+    <ellipse cx="800" cy="36" rx="40" ry="18" fill="#F8F4E8"/>
+  </g>
+  <g opacity="0.6">
+    <ellipse cx="470" cy="28" rx="72" ry="22" fill="#F0EAD6"/>
+    <ellipse cx="444" cy="36" rx="46" ry="16" fill="#F0EAD6"/>
+    <ellipse cx="498" cy="34" rx="40" ry="15" fill="#F0EAD6"/>
+  </g>
+  <g stroke="#9A9080" stroke-width="1" fill="none" opacity="0.35">
+    <path d="M600,25 Q603,22 606,25"/><path d="M612,20 Q615,17 618,20"/>
+    <path d="M870,32 Q873,29 876,32"/>
+  </g>
+
+  <!-- ══════════════════════════════════
+       1. MONT-SAINT-MICHEL — extrême gauche
+       Rocher dans la mer, abbaye empilée
+       ══════════════════════════════════ -->
+  <!-- Mer et grève -->
+  <rect x="0" y="192" width="165" height="30" fill="url(#sea)" opacity="0.7"/>
+  <ellipse cx="80" cy="195" rx="85" ry="10" fill="#98C0D0" opacity="0.4"/>
+  <!-- Rocher granitique -->
+  <ellipse cx="78" cy="202" rx="72" ry="20" fill="url(#rock)"/>
+  <path d="M20,202 Q78,178 136,202 Q120,190 78,188 Q36,190 20,202 Z" fill="#C0B098"/>
+  <!-- Remparts en cercle (base) -->
+  <path d="M26,200 Q78,172 130,200" fill="#B8AA88" stroke="#A89878" stroke-width="1.2"/>
+  <rect x="22" y="195" width="112" height="8" rx="2" fill="#B8AA88"/>
+  <!-- Tours remparts -->
+  <rect x="22" y="185" width="10" height="14" rx="2" fill="#C0B090"/>
+  <polygon points="22,185 32,185 27,178" fill="#8898A8"/>
+  <rect x="60" y="180" width="10" height="18" rx="2" fill="#C0B090"/>
+  <polygon points="60,180 70,180 65,172" fill="#8898A8"/>
+  <rect x="95" y="182" width="10" height="16" rx="2" fill="#C0B090"/>
+  <polygon points="95,182 105,182 100,174" fill="#8898A8"/>
+  <rect x="124" y="186" width="10" height="12" rx="2" fill="#C0B090"/>
+  <polygon points="124,186 134,186 129,179" fill="#8898A8"/>
+  <!-- Corps abbaye — empilé sur le rocher -->
+  <rect x="52" y="155" width="52" height="38" fill="url(#stone1)" rx="1"/>
+  <!-- Fenêtres abbaye -->
+  <path d="M58,164 L58,176 Q65,168 72,176 L72,164 Z" fill="#7A6840" opacity="0.6"/>
+  <path d="M84,164 L84,176 Q91,168 98,176 L84,164 Z" fill="#7A6840" opacity="0.6"/>
+  <rect x="52" y="155" width="52" height="5" fill="#C0B080"/>
+  <!-- Corps central plus haut -->
+  <rect x="62" y="130" width="32" height="30" fill="url(#stone2)" rx="1"/>
+  <path d="M64,140 L64,150 Q70,144 76,150 L76,140 Z" fill="#7A6840" opacity="0.55"/>
+  <path d="M78,140 L78,150 Q84,144 90,150 L78,140 Z" fill="#7A6840" opacity="0.55"/>
+  <!-- Tour centrale abbaye -->
+  <rect x="70" y="100" width="16" height="34" fill="url(#stone1)" rx="1"/>
+  <!-- Petites fenêtres tour -->
+  <path d="M73,108 L73,118 Q78,112 83,118 L83,108 Z" fill="#7A6840" opacity="0.6"/>
+  <path d="M73,122 L73,130 Q78,126 83,130 L83,122 Z" fill="#7A6840" opacity="0.5"/>
+  <!-- Flèche centrale MSM — très caractéristique, haute et fine -->
+  <polygon points="70,100 86,100 78,52" fill="url(#zinc)"/>
+  <line x1="78" y1="52" x2="78" y2="42" stroke="#687888" stroke-width="2.5"/>
+  <!-- Archange Michel au sommet -->
+  <circle cx="78" cy="41" r="3.5" fill="#D8B030"/>
+  <polygon points="74,41 82,41 78,35" fill="#D8B030" opacity="0.8"/>
+  <!-- Tours secondaires -->
+  <rect x="54" y="118" width="12" height="20" rx="1" fill="url(#stone2)"/>
+  <polygon points="54,118 66,118 60,108" fill="url(#zinc2)"/>
+  <line x1="60" y1="108" x2="60" y2="102" stroke="#687888" stroke-width="1.5"/>
+  <circle cx="60" cy="101" r="2" fill="#D8B030" opacity="0.7"/>
+  <rect x="90" y="120" width="12" height="18" rx="1" fill="url(#stone2)"/>
+  <polygon points="90,120 102,120 96,110" fill="url(#zinc2)"/>
+  <line x1="96" y1="110" x2="96" y2="104" stroke="#687888" stroke-width="1.5"/>
+  <circle cx="96" cy="103" r="2" fill="#D8B030" opacity="0.7"/>
+  <!-- Digue/chaussée -->
+  <rect x="0" y="208" width="25" height="6" rx="1" fill="#C0B088" opacity="0.7"/>
+
+  <!-- ══════════════════════════════════
+       2. CHÂTEAU DE CHAMBORD — centre-gauche
+       Toits à lanternons multiples, symétrique
+       ══════════════════════════════════ -->
+  <g filter="url(#sh)">
+    <!-- Douves (eau) -->
+    <rect x="168" y="208" width="200" height="12" rx="2" fill="url(#sea)" opacity="0.5"/>
+    <!-- Corps principal long -->
+    <rect x="176" y="150" width="184" height="62" fill="url(#stone3)" rx="1"/>
+    <!-- Fenêtres du rez-de-chaussée — grandes arcades -->
+    <path d="M182,206 L182,184 Q192,172 202,184 L202,206 Z" fill="#7A6840" opacity="0.55"/>
+    <path d="M208,206 L208,184 Q218,172 228,184 L228,206 Z" fill="#7A6840" opacity="0.55"/>
+    <path d="M234,206 L234,184 Q244,172 254,184 L234,206 Z" fill="#7A6840" opacity="0.55"/>
+    <path d="M284,206 L284,184 Q294,172 304,184 L284,206 Z" fill="#7A6840" opacity="0.55"/>
+    <path d="M310,206 L310,184 Q320,172 330,184 L310,206 Z" fill="#7A6840" opacity="0.55"/>
+    <path d="M336,206 L336,184 Q346,172 356,184 L336,206 Z" fill="#7A6840" opacity="0.55"/>
+    <!-- Fenêtres étage 1 -->
+    <path d="M184,175 L184,162 Q192,155 200,162 L200,175 Z" fill="#8AAABB" opacity="0.65"/>
+    <path d="M210,175 L210,162 Q218,155 226,162 L210,175 Z" fill="#8AAABB" opacity="0.65"/>
+    <path d="M236,175 L236,162 Q244,155 252,162 L236,175 Z" fill="#8AAABB" opacity="0.65"/>
+    <path d="M286,175 L286,162 Q294,155 302,162 L286,175 Z" fill="#8AAABB" opacity="0.65"/>
+    <path d="M312,175 L312,162 Q320,155 328,162 L312,175 Z" fill="#8AAABB" opacity="0.65"/>
+    <path d="M338,175 L338,162 Q346,155 354,162 L338,175 Z" fill="#8AAABB" opacity="0.65"/>
+    <!-- Corniche -->
+    <rect x="174" y="150" width="188" height="5" fill="#C0A870"/>
+    <!-- TOITURE CHAMBORD — très caractéristique : forêt de tourelles et lanternons -->
+    <!-- Toit principal -->
+    <rect x="174" y="128" width="188" height="24" fill="url(#zinc)"/>
+    <!-- Lucarnes rangée basse -->
+    <rect x="182" y="120" width="14" height="18" rx="7 7 0 0" fill="url(#stone3)"/>
+    <polygon points="182,120 196,120 189,112" fill="url(#zinc2)"/>
+    <rect x="184" y="122" width="10" height="12" rx="5 5 0 0" fill="#8AAABB" opacity="0.7"/>
+    <rect x="206" y="118" width="14" height="20" rx="7 7 0 0" fill="url(#stone3)"/>
+    <polygon points="206,118 220,118 213,110" fill="url(#zinc2)"/>
+    <rect x="230" y="120" width="14" height="18" rx="7 7 0 0" fill="url(#stone3)"/>
+    <polygon points="230,120 244,120 237,112" fill="url(#zinc2)"/>
+    <rect x="288" y="120" width="14" height="18" rx="7 7 0 0" fill="url(#stone3)"/>
+    <polygon points="288,120 302,120 295,112" fill="url(#zinc2)"/>
+    <rect x="312" y="118" width="14" height="20" rx="7 7 0 0" fill="url(#stone3)"/>
+    <polygon points="312,118 326,118 319,110" fill="url(#zinc2)"/>
+    <rect x="336" y="120" width="14" height="18" rx="7 7 0 0" fill="url(#stone3)"/>
+    <polygon points="336,120 350,120 343,112" fill="url(#zinc2)"/>
+    <!-- Tour centrale + double escalier + lanternon central CARACTERISTIQUE -->
+    <rect x="248" y="112" width="40" height="52" fill="url(#stone1)" rx="1"/>
+    <!-- Fenêtres tour centrale -->
+    <path d="M254,140 L254,152 Q268,136 282,152 L282,140 Z" fill="#8AAABB" opacity="0.6"/>
+    <path d="M256,158 L256,168 Q268,152 280,168 L256,158 Z" fill="#8AAABB" opacity="0.55"/>
+    <!-- Toit tour centrale avec lanternons multiples -->
+    <rect x="246" y="100" width="44" height="14" fill="url(#zinc)"/>
+    <!-- Petit lanternon gauche -->
+    <rect x="250" y="88" width="10" height="14" rx="2" fill="url(#stone1)"/>
+    <polygon points="250,88 260,88 255,80" fill="url(#zinc2)"/>
+    <line x1="255" y1="80" x2="255" y2="74" stroke="#687888" stroke-width="1.5"/>
+    <circle cx="255" cy="73" r="2" fill="#D8B030"/>
+    <!-- Grand lanternon central Chambord -->
+    <rect x="260" y="78" width="16" height="24" rx="2" fill="url(#stone1)"/>
+    <rect x="258" y="75" width="20" height="5" rx="1" fill="#C0A870"/>
+    <polygon points="258,75 278,75 268,58" fill="url(#zinc)"/>
+    <line x1="268" y1="58" x2="268" y2="48" stroke="#687888" stroke-width="2"/>
+    <circle cx="268" cy="47" r="3" fill="#D8B030"/>
+    <!-- Petit lanternon droite -->
+    <rect x="276" y="88" width="10" height="14" rx="2" fill="url(#stone1)"/>
+    <polygon points="276,88 286,88 281,80" fill="url(#zinc2)"/>
+    <line x1="281" y1="80" x2="281" y2="74" stroke="#687888" stroke-width="1.5"/>
+    <circle cx="281" cy="73" r="2" fill="#D8B030"/>
+    <!-- Tours d'angles -->
+    <rect x="174" y="130" width="24" height="74" fill="url(#stone2)" rx="1"/>
+    <ellipse cx="186" cy="130" rx="12" ry="8" fill="url(#zinc2)"/>
+    <ellipse cx="186" cy="126" rx="8" ry="5" fill="url(#zinc)"/>
+    <line x1="186" y1="121" x2="186" y2="113" stroke="#687888" stroke-width="1.8"/>
+    <circle cx="186" cy="112" r="2.5" fill="#D8B030" opacity="0.8"/>
+    <rect x="338" y="130" width="24" height="74" fill="url(#stone2)" rx="1"/>
+    <ellipse cx="350" cy="130" rx="12" ry="8" fill="url(#zinc2)"/>
+    <ellipse cx="350" cy="126" rx="8" ry="5" fill="url(#zinc)"/>
+    <line x1="350" y1="121" x2="350" y2="113" stroke="#687888" stroke-width="1.8"/>
+    <circle cx="350" cy="112" r="2.5" fill="#D8B030" opacity="0.8"/>
+  </g>
+
+  <!-- ══════════════════════════════════
+       3. TOUR EIFFEL — centre, vraie silhouette élancée
+       ══════════════════════════════════ -->
+  <g filter="url(#sh)">
+    <!-- Champ de Mars (herbe) -->
+    <ellipse cx="500" cy="225" rx="80" ry="12" fill="#7A9860" opacity="0.4"/>
+    <!-- PIEDS — très évasés, caractéristique -->
+    <!-- Pied avant-gauche : courbe parabolique vers la base -->
+    <path d="M468,220 Q472,190 480,168 L488,168 Q480,190 476,220 Z" fill="url(#eiffel)"/>
+    <!-- Pied avant-droit -->
+    <path d="M524,220 Q528,190 520,168 L512,168 Q520,190 528,220 Z" fill="url(#eiffel)"/>
+    <!-- Pied arrière-gauche (visible) -->
+    <path d="M474,220 Q477,195 482,168 Z" fill="#6A7A88" opacity="0.35"/>
+    <!-- Pied arrière-droit -->
+    <path d="M526,220 Q523,195 518,168 Z" fill="#6A7A88" opacity="0.35"/>
+    <!-- Grandes arches sous la 1ère plateforme -->
+    <path d="M468,220 Q484,200 500,220" fill="none" stroke="#7A8C98" stroke-width="2.8"/>
+    <path d="M500,220 Q516,200 532,220" fill="none" stroke="#7A8C98" stroke-width="2.8"/>
+    <!-- Petite arche décorative intérieure -->
+    <path d="M476,218 Q500,205 524,218" fill="none" stroke="#7A8C98" stroke-width="1.5" opacity="0.5"/>
+    <!-- 1ER NIVEAU — trapèze large -->
+    <path d="M480,168 L520,168 L514,136 L486,136 Z" fill="url(#eiffel)"/>
+    <!-- Plateforme 1 avec balustrade -->
+    <rect x="477" y="134" width="46" height="5" rx="1.5" fill="#6A7A88"/>
+    <rect x="479" y="132" width="42" height="3" rx="1" fill="#7A8A98" opacity="0.6"/>
+    <!-- Détails treillis 1er niveau -->
+    <line x1="486" y1="144" x2="492" y2="168" stroke="#8A9AA8" stroke-width="1" opacity="0.45"/>
+    <line x1="492" y1="144" x2="486" y2="168" stroke="#8A9AA8" stroke-width="1" opacity="0.45"/>
+    <line x1="498" y1="144" x2="504" y2="168" stroke="#8A9AA8" stroke-width="1" opacity="0.45"/>
+    <line x1="504" y1="144" x2="498" y2="168" stroke="#8A9AA8" stroke-width="1" opacity="0.45"/>
+    <line x1="510" y1="144" x2="516" y2="168" stroke="#8A9AA8" stroke-width="1" opacity="0.45"/>
+    <line x1="516" y1="144" x2="510" y2="168" stroke="#8A9AA8" stroke-width="1" opacity="0.45"/>
+    <!-- 2ÈME NIVEAU — trapèze qui se resserre -->
+    <path d="M486,132 L514,132 L508,100 L492,100 Z" fill="url(#eiffel)"/>
+    <!-- Plateforme 2 -->
+    <rect x="488" y="98" width="24" height="5" rx="1.5" fill="#6A7A88"/>
+    <rect x="490" y="96" width="20" height="3" rx="1" fill="#7A8A98" opacity="0.6"/>
+    <!-- Treillis 2ème -->
+    <line x1="492" y1="108" x2="497" y2="132" stroke="#8A9AA8" stroke-width="0.8" opacity="0.45"/>
+    <line x1="497" y1="108" x2="492" y2="132" stroke="#8A9AA8" stroke-width="0.8" opacity="0.45"/>
+    <line x1="503" y1="108" x2="508" y2="132" stroke="#8A9AA8" stroke-width="0.8" opacity="0.45"/>
+    <line x1="508" y1="108" x2="503" y2="132" stroke="#8A9AA8" stroke-width="0.8" opacity="0.45"/>
+    <!-- 3ÈME NIVEAU — fin -->
+    <path d="M492,96 L508,96 L504,70 L496,70 Z" fill="url(#eiffel)"/>
+    <!-- Plateforme 3 -->
+    <rect x="492" y="68" width="16" height="4" rx="1.5" fill="#6A7A88"/>
+    <!-- Flèche — fine et longue -->
+    <path d="M496,68 L504,68 L500,36 Z" fill="#6A7A88"/>
+    <!-- Antenne très fine -->
+    <rect x="499" y="27" width="2" height="14" fill="#5C6C78"/>
+    <!-- Lumière sommet -->
+    <circle cx="500" cy="26" r="3" fill="#D8B030" opacity="0.85"/>
+    <circle cx="500" cy="26" r="6" fill="#D8B030" opacity="0.2"/>
+  </g>
+
+  <!-- ══════════════════════════════════
+       4. PALAIS DES PAPES D'AVIGNON — centre-droite
+       Masse imposante, tours carrées, style gothique méridional
+       ══════════════════════════════════ -->
+  <g filter="url(#sh)">
+    <!-- Base du palais — grand bloc de pierre massive -->
+    <rect x="610" y="120" width="160" height="102" fill="url(#stone2)" rx="1"/>
+    <!-- Bossages (gros moellons) stylisés -->
+    <rect x="612" y="122" width="156" height="4" fill="#C0B088" opacity="0.5"/>
+    <rect x="612" y="142" width="156" height="3" fill="#C0B088" opacity="0.4"/>
+    <rect x="612" y="162" width="156" height="3" fill="#C0B088" opacity="0.4"/>
+    <rect x="612" y="182" width="156" height="3" fill="#C0B088" opacity="0.4"/>
+    <!-- Grandes fenêtres à meneaux -->
+    <path d="M622,150 L622,136 Q632,126 642,136 L642,150 Z" fill="#8A9AA8" opacity="0.55"/>
+    <line x1="632" y1="136" x2="632" y2="150" stroke="#D0C090" stroke-width="0.8" opacity="0.5"/>
+    <path d="M652,150 L652,136 Q662,126 672,136 L652,150 Z" fill="#8A9AA8" opacity="0.55"/>
+    <path d="M682,150 L682,136 Q692,126 702,136 L682,150 Z" fill="#8A9AA8" opacity="0.55"/>
+    <path d="M712,150 L712,136 Q722,126 732,136 L712,150 Z" fill="#8A9AA8" opacity="0.55"/>
+    <path d="M742,150 L742,136 Q752,126 762,136 L742,150 Z" fill="#8A9AA8" opacity="0.55"/>
+    <!-- Fenêtres 2ème rangée -->
+    <path d="M624,178 L624,164 Q634,155 644,164 L624,178 Z" fill="#8A9AA8" opacity="0.5"/>
+    <path d="M656,178 L656,164 Q666,155 676,164 L656,178 Z" fill="#8A9AA8" opacity="0.5"/>
+    <path d="M688,178 L688,164 Q698,155 708,164 L688,178 Z" fill="#8A9AA8" opacity="0.5"/>
+    <path d="M720,178 L720,164 Q730,155 740,164 L720,178 Z" fill="#8A9AA8" opacity="0.5"/>
+    <path d="M752,178 L752,164 Q762,155 772,164 L752,178 Z" fill="#8A9AA8" opacity="0.5"/>
+    <!-- Portail central imposant -->
+    <path d="M668,222 L668,188 Q686,170 704,188 L704,222 Z" fill="#6A5828" opacity="0.75"/>
+    <path d="M673,222 L673,191 Q686,176 699,191 L699,222 Z" fill="#5A4820" opacity="0.45"/>
+    <!-- Corniche crénelée — TRÈS CARACTÉRISTIQUE du palais -->
+    <rect x="608" y="116" width="166" height="6" fill="#C0A870" rx="1"/>
+    <!-- Créneaux sur toute la longueur -->
+    <rect x="612" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="624" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="636" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="648" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="660" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="672" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="684" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="696" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="708" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="720" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="732" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="744" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="756" y="108" width="8" height="10" rx="1" fill="#C8B880"/>
+    <!-- Grande tour nord-ouest — carré massif -->
+    <rect x="608" y="68" width="44" height="56" fill="url(#stone1)" rx="1"/>
+    <!-- Fenêtres tour -->
+    <path d="M616,84 L616,98 Q630,78 644,98 L644,84 Z" fill="#8A9AA8" opacity="0.5"/>
+    <path d="M616,104 L616,114 Q630,98 644,114 L616,104 Z" fill="#8A9AA8" opacity="0.45"/>
+    <!-- Créneaux tour nord -->
+    <rect x="610" y="60" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="622" y="60" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="634" y="60" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="646" y="60" width="8" height="10" rx="1" fill="#C8B880"/>
+    <!-- Grande tour sud-est -->
+    <rect x="718" y="80" width="52" height="44" fill="url(#stone1)" rx="1"/>
+    <path d="M726,94 L726,108 Q744,80 762,108 L762,94 Z" fill="#8A9AA8" opacity="0.5"/>
+    <!-- Créneaux tour sud -->
+    <rect x="720" y="72" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="732" y="72" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="744" y="72" width="8" height="10" rx="1" fill="#C8B880"/>
+    <rect x="756" y="72" width="8" height="10" rx="1" fill="#C8B880"/>
+    <!-- Tour intermédiaire -->
+    <rect x="660" y="88" width="32" height="36" fill="url(#stone2)" rx="1"/>
+    <rect x="662" y="82" width="28" height="8" fill="#C0A870" rx="1"/>
+    <rect x="664" y="74" width="6" height="10" rx="1" fill="#C8B880"/>
+    <rect x="674" y="74" width="6" height="10" rx="1" fill="#C8B880"/>
+    <rect x="684" y="74" width="6" height="10" rx="1" fill="#C8B880"/>
+  </g>
+
+  <!-- ══════════════════════════════════
+       5. IMMEUBLES HAUSSMANNIENS — droite
+       ══════════════════════════════════ -->
+  <g filter="url(#sh)">
+    <!-- Immeuble principal -->
+    <rect x="782" y="100" width="120" height="122" fill="url(#stone3)" rx="1"/>
+    <path d="M780,100 Q783,76 793,72 L894,72 Q904,76 907,100 Z" fill="url(#zinc)"/>
+    <!-- Cheminées -->
+    <rect x="798" y="68" width="6" height="12" fill="#78909A" rx="1"/>
+    <rect x="820" y="64" width="6" height="16" fill="#78909A" rx="1"/>
+    <rect x="848" y="66" width="6" height="14" fill="#78909A" rx="1"/>
+    <rect x="874" y="64" width="6" height="16" fill="#78909A" rx="1"/>
+    <rect x="894" y="68" width="6" height="12" fill="#78909A" rx="1"/>
+    <!-- Lucarnes -->
+    <rect x="796" y="76" width="13" height="18" rx="6.5 6.5 0 0" fill="#D8CEAE"/>
+    <rect x="798" y="78" width="9" height="12" rx="4.5 4.5 0 0" fill="#8AAABB" opacity="0.7"/>
+    <rect x="824" y="74" width="13" height="20" rx="6.5 6.5 0 0" fill="#D8CEAE"/>
+    <rect x="826" y="76" width="9" height="14" rx="4.5 4.5 0 0" fill="#8AAABB" opacity="0.7"/>
+    <rect x="856" y="74" width="13" height="20" rx="6.5 6.5 0 0" fill="#D8CEAE"/>
+    <rect x="858" y="76" width="9" height="14" rx="4.5 4.5 0 0" fill="#8AAABB" opacity="0.7"/>
+    <rect x="884" y="76" width="13" height="18" rx="6.5 6.5 0 0" fill="#D8CEAE"/>
+    <rect x="886" y="78" width="9" height="12" rx="4.5 4.5 0 0" fill="#8AAABB" opacity="0.7"/>
+    <rect x="780" y="100" width="128" height="5" fill="#C0A870"/>
+    <!-- 4 étages de fenêtres hautes -->
+    <rect x="788" y="109" width="16" height="22" rx="8 8 0 0" fill="#B8CEDC" opacity="0.85"/>
+    <rect x="790" y="111" width="12" height="16" rx="6 6 0 0" fill="#98B4C4" opacity="0.9"/>
+    <rect x="812" y="109" width="16" height="22" rx="8 8 0 0" fill="#B8CEDC" opacity="0.85"/>
+    <rect x="814" y="111" width="12" height="16" rx="6 6 0 0" fill="#98B4C4" opacity="0.9"/>
+    <rect x="836" y="109" width="16" height="22" rx="8 8 0 0" fill="#B8CEDC" opacity="0.85"/>
+    <rect x="860" y="109" width="16" height="22" rx="8 8 0 0" fill="#B8CEDC" opacity="0.85"/>
+    <rect x="884" y="109" width="16" height="22" rx="8 8 0 0" fill="#B8CEDC" opacity="0.85"/>
+    <!-- Balcons fer forgé -->
+    <rect x="786" y="131" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <line x1="789" y1="131" x2="789" y2="134" stroke="#7A6040" stroke-width="1.1"/>
+    <line x1="794" y1="131" x2="794" y2="134" stroke="#7A6040" stroke-width="1.1"/>
+    <line x1="799" y1="131" x2="799" y2="134" stroke="#7A6040" stroke-width="1.1"/>
+    <line x1="804" y1="131" x2="804" y2="134" stroke="#7A6040" stroke-width="1.1"/>
+    <rect x="810" y="131" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <line x1="813" y1="131" x2="813" y2="134" stroke="#7A6040" stroke-width="1.1"/>
+    <line x1="818" y1="131" x2="818" y2="134" stroke="#7A6040" stroke-width="1.1"/>
+    <line x1="823" y1="131" x2="823" y2="134" stroke="#7A6040" stroke-width="1.1"/>
+    <rect x="834" y="131" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <rect x="858" y="131" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <rect x="882" y="131" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <!-- Étage 2 -->
+    <rect x="788" y="137" width="16" height="20" rx="8 8 0 0" fill="#B8CEDC" opacity="0.8"/>
+    <rect x="812" y="137" width="16" height="20" rx="8 8 0 0" fill="#B8CEDC" opacity="0.8"/>
+    <rect x="836" y="137" width="16" height="20" rx="8 8 0 0" fill="#B8CEDC" opacity="0.8"/>
+    <rect x="860" y="137" width="16" height="20" rx="8 8 0 0" fill="#B8CEDC" opacity="0.8"/>
+    <rect x="884" y="137" width="16" height="20" rx="8 8 0 0" fill="#B8CEDC" opacity="0.8"/>
+    <rect x="786" y="157" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <rect x="810" y="157" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <rect x="834" y="157" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <rect x="858" y="157" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <rect x="882" y="157" width="20" height="2.5" rx="1" fill="#7A6040"/>
+    <!-- Étage 3 -->
+    <rect x="788" y="163" width="16" height="18" rx="8 8 0 0" fill="#B8CEDC" opacity="0.75"/>
+    <rect x="812" y="163" width="16" height="18" rx="8 8 0 0" fill="#B8CEDC" opacity="0.75"/>
+    <rect x="836" y="163" width="16" height="18" rx="8 8 0 0" fill="#B8CEDC" opacity="0.75"/>
+    <rect x="860" y="163" width="16" height="18" rx="8 8 0 0" fill="#B8CEDC" opacity="0.75"/>
+    <rect x="884" y="163" width="16" height="18" rx="8 8 0 0" fill="#B8CEDC" opacity="0.75"/>
+    <!-- Porte cochère -->
+    <path d="M840,222 L840,184 Q858,166 876,184 L876,222 Z" fill="#5A4820" opacity="0.88"/>
+    <path d="M844,222 L844,186 Q858,171 872,186 L872,222 Z" fill="#7A6030" opacity="0.45"/>
+    <!-- Lanterne -->
+    <rect x="856" y="168" width="4" height="14" fill="#4A3818"/>
+    <circle cx="858" cy="167" r="5.5" fill="#D8B030" opacity="0.8"/>
+    <circle cx="858" cy="167" r="10" fill="#D8B030" opacity="0.14"/>
+    <!-- Immeuble secondaire droite -->
+    <rect x="906" y="118" width="94" height="104" fill="url(#stone2)" rx="1"/>
+    <path d="M904,118 Q907,96 915,92 L994,92 Q1002,96 1005,118 Z" fill="url(#zinc2)"/>
+    <rect x="916" y="98" width="11" height="16" rx="5.5 5.5 0 0" fill="#D8CEAE"/>
+    <rect x="918" y="100" width="7" height="10" rx="3.5 3.5 0 0" fill="#8AAABB" opacity="0.7"/>
+    <rect x="944" y="96" width="11" height="18" rx="5.5 5.5 0 0" fill="#D8CEAE"/>
+    <rect x="970" y="98" width="11" height="16" rx="5.5 5.5 0 0" fill="#D8CEAE"/>
+    <rect x="904" y="118" width="104" height="4" fill="#C0A870"/>
+    <rect x="912" y="126" width="14" height="20" rx="7 7 0 0" fill="#B8CEDC" opacity="0.8"/>
+    <rect x="934" y="126" width="14" height="20" rx="7 7 0 0" fill="#B8CEDC" opacity="0.8"/>
+    <rect x="956" y="126" width="14" height="20" rx="7 7 0 0" fill="#B8CEDC" opacity="0.8"/>
+    <rect x="978" y="126" width="14" height="20" rx="7 7 0 0" fill="#B8CEDC" opacity="0.8"/>
+    <rect x="910" y="146" width="18" height="2" rx="1" fill="#7A6040"/>
+    <rect x="932" y="146" width="18" height="2" rx="1" fill="#7A6040"/>
+    <rect x="954" y="146" width="18" height="2" rx="1" fill="#7A6040"/>
+    <rect x="976" y="146" width="18" height="2" rx="1" fill="#7A6040"/>
+    <rect x="912" y="152" width="14" height="18" rx="7 7 0 0" fill="#B8CEDC" opacity="0.75"/>
+    <rect x="934" y="152" width="14" height="18" rx="7 7 0 0" fill="#B8CEDC" opacity="0.75"/>
+    <rect x="956" y="152" width="14" height="18" rx="7 7 0 0" fill="#B8CEDC" opacity="0.75"/>
+    <rect x="978" y="152" width="14" height="18" rx="7 7 0 0" fill="#B8CEDC" opacity="0.75"/>
+    <rect x="912" y="174" width="14" height="16" rx="7 7 0 0" fill="#B8CEDC" opacity="0.7"/>
+    <rect x="934" y="174" width="14" height="16" rx="7 7 0 0" fill="#B8CEDC" opacity="0.7"/>
+    <rect x="956" y="174" width="14" height="16" rx="7 7 0 0" fill="#B8CEDC" opacity="0.7"/>
+    <rect x="978" y="174" width="14" height="16" rx="7 7 0 0" fill="#B8CEDC" opacity="0.7"/>
+    <!-- Cheminées immeuble secondaire -->
+    <rect x="922" y="88" width="5" height="10" fill="#78909A" rx="1"/>
+    <rect x="956" y="86" width="5" height="12" fill="#78909A" rx="1"/>
+    <rect x="986" y="88" width="5" height="10" fill="#78909A" rx="1"/>
+  </g>
+
+  <!-- ══════════ ARBRES — volumineux, vert foncé ══════════ -->
+  <!-- Arbres MSM -->
+  <g>
+    <rect x="138" y="174" width="9" height="26" rx="3" fill="#5A4018"/>
+    <ellipse cx="142" cy="162" rx="26" ry="20" fill="url(#tree)"/>
+    <ellipse cx="130" cy="170" rx="18" ry="14" fill="#2E6020" opacity="0.8"/>
+    <ellipse cx="154" cy="168" rx="16" ry="13" fill="#2E6020" opacity="0.76"/>
+  </g>
+  <!-- Arbres Chambord gauche -->
+  <g>
+    <rect x="374" y="172" width="10" height="28" rx="3" fill="#5A4018"/>
+    <ellipse cx="379" cy="160" rx="30" ry="24" fill="url(#tree)"/>
+    <ellipse cx="364" cy="170" rx="20" ry="16" fill="#2E6020" opacity="0.82"/>
+    <ellipse cx="394" cy="168" rx="18" ry="15" fill="#2E6020" opacity="0.78"/>
+    <ellipse cx="379" cy="152" rx="20" ry="14" fill="#3A7028" opacity="0.6"/>
+  </g>
+  <!-- Arbres Chambord droite -->
+  <g>
+    <rect x="364" y="188" width="8" height="32" rx="3" fill="#5A4018"/>
+    <ellipse cx="368" cy="176" rx="24" ry="20" fill="url(#tree)"/>
+    <ellipse cx="356" cy="184" rx="16" ry="14" fill="#2E6020" opacity="0.8"/>
+  </g>
+  <!-- Arbres entre Chambord et Tour Eiffel -->
+  <g>
+    <rect x="418" y="186" width="9" height="34" rx="3" fill="#5A4018"/>
+    <ellipse cx="422" cy="174" rx="26" ry="21" fill="url(#tree)"/>
+    <ellipse cx="410" cy="182" rx="18" ry="15" fill="#2E6020" opacity="0.8"/>
+    <ellipse cx="434" cy="180" rx="16" ry="14" fill="#2E6020" opacity="0.76"/>
+  </g>
+  <!-- Arbres entre Tour Eiffel et Palais des Papes -->
+  <g>
+    <rect x="570" y="188" width="9" height="32" rx="3" fill="#5A4018"/>
+    <ellipse cx="574" cy="176" rx="26" ry="21" fill="url(#tree)"/>
+    <ellipse cx="562" cy="184" rx="17" ry="14" fill="#2E6020" opacity="0.8"/>
+    <ellipse cx="586" cy="182" rx="15" ry="13" fill="#2E6020" opacity="0.76"/>
+  </g>
+  <!-- Arbres Palais des Papes -->
+  <g>
+    <rect x="594" y="182" width="10" height="38" rx="3" fill="#5A4018"/>
+    <ellipse cx="599" cy="168" rx="28" ry="22" fill="url(#tree)"/>
+    <ellipse cx="584" cy="178" rx="18" ry="15" fill="#2E6020" opacity="0.82"/>
+    <ellipse cx="614" cy="176" rx="16" ry="14" fill="#2E6020" opacity="0.78"/>
+  </g>
+  <!-- Arbres droite -->
+  <g>
+    <rect x="768" y="180" width="10" height="40" rx="3" fill="#5A4018"/>
+    <ellipse cx="773" cy="166" rx="30" ry="24" fill="url(#tree)"/>
+    <ellipse cx="757" cy="176" rx="20" ry="16" fill="#2E6020" opacity="0.82"/>
+    <ellipse cx="789" cy="174" rx="18" ry="15" fill="#2E6020" opacity="0.78"/>
+    <ellipse cx="773" cy="158" rx="20" ry="15" fill="#3A7028" opacity="0.55"/>
+  </g>
+
+  <!-- ══════ SOL / TERRAIN ══════ -->
+  <rect x="0" y="218" width="1000" height="22" fill="#C8B880" opacity="0.7"/>
+  <rect x="0" y="216" width="1000" height="4" fill="#C0B070" opacity="0.5"/>
+</svg>
+    <div class="landing-sources">data.gouv.fr · DVF · géorisques.gouv.fr · interieur.gouv.fr · DGFIP</div>
+    <div class="expert-link-wrap">
+      <div class="expert-link-label">Vous connaissez déjà le site ?</div>
+      <span class="expert-link" onclick="goExpert()">Accéder directement au mode expert →</span>
+    </div>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="screen" id="screen-onboarding">
+  <div class="onb-wrap">
+    <button class="onb-back" onclick="goLanding()">← Retour</button>
+    <div class="onb-progress">
+      <div class="onb-dot active" id="dot1"></div>
+      <div class="onb-dot" id="dot2"></div>
+      <div class="onb-dot" id="dot3"></div>
+    </div>
+    <div id="onb-content"></div>
+  </div>
+</div>
+
+<!-- EXPERT -->
+<div class="screen" id="screen-expert">
+  <div class="expert-wrap">
+    <div class="mode-switch">
+      <button class="mode-btn" onclick="goOnboarding()">← Revenir au démarrage guidé</button>
+    </div>
+
+    <div class="budget-card">
+      <div class="budget-card-title">💰 Votre projet immobilier</div>
+      <div class="budget-card-sub">Saisissez votre budget total et la surface souhaitée — on calcule automatiquement le prix max acceptable au m². Ce simulateur s'applique à tous les résultats ci-dessous.</div>
+      <div class="flt-grid" style="grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:6px">
+        <div class="flt-f"><label>Budget total (€)</label><input type="number" id="budTotal" value="250000" min="50000" max="3000000" step="10000" oninput="upBudCalc()"/></div>
+        <div class="flt-f"><label>Surface souhaitée (m²)</label><input type="number" id="surface" value="60" min="15" max="500" step="5" oninput="upBudCalc()"/></div>
+        <div class="flt-f"><label style="color:var(--green)">Prix max calculé</label><div id="budCalc" class="bud-calc-box">4 167 €/m²</div></div>
+      </div>
+    </div>
+
+    <div class="situation-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+        <div class="situation-card-title">📍 Ma situation actuelle <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);font-weight:400">— optionnel</span></div>
+        <span id="curCommunePill" style="display:none"></span>
+      </div>
+      <div class="situation-card-sub">Saisissez votre commune actuelle pour voir les écarts (prix, score, taxe) sur chaque résultat.</div>
+      <div class="dd-wrap" style="margin-top:8px">
+        <input class="search-input" id="curCommuneInput" type="text" placeholder="Tapez votre ville actuelle (Lyon, Paris, Bordeaux…)" autocomplete="off" oninput="curCommuneIn(this.value)" onkeydown="curCommuneKey(event)"/>
+        <div class="dd-menu" id="curCommuneDd"></div>
+      </div>
+    </div>
+
+    <div id="view-search">
+      <!-- RESULTS shown first, always visible -->
+      <div class="res-wrap open" id="res" style="margin-bottom:14px">
+        <div class="tabs">
+          <button class="rtab on" id="t-r" onclick="goTab('r')">Résultats <span id="tc-r"></span></button>
+          <button class="rtab" id="t-f" onclick="goTab('f')">Favoris <span id="tc-f"></span></button>
+          <button class="rtab" id="t-c" onclick="goTab('c')">Comparer <span id="tc-c"></span></button>
+        </div>
+        <div class="rpanel on" id="p-r">
+          <div class="rh"><div class="rt" id="rtit">Résultats</div><div style="display:flex;align-items:center;gap:10px"><span class="rc2" id="rcnt"></span><button class="surprise-btn" onclick="surpriseMe()" title="Découvrir une commune au hasard parmi les résultats">🎲 Découvrir une commune</button></div></div>
+          <div class="notice">Scores indicatifs · données réelles en production · Cliquez sur une commune pour sa fiche</div>
+          <div id="rl"><div class="empty-s"><span>🔍</span><div>Lancez l'analyse pour voir les communes<br><span style="font-size:10px;opacity:0.7">Cliquez sur "Analyser et trouver des communes" après avoir choisi vos critères</span></div></div></div>
+        </div>
+        <div class="rpanel" id="p-f">
+          <div class="rh"><div class="rt">Mes favoris</div><div class="rc2" id="fcnt"></div></div>
+          <div id="fl"><div class="empty-s"><span>♡</span><div>Aucun favori pour l'instant<br><span style="font-size:10px;opacity:0.7">Cliquez sur <strong>Favoris</strong> sur une carte résultat pour sauvegarder une commune</span></div></div></div>
+        </div>
+        <div class="rpanel" id="p-c">
+          <div class="rh"><div class="rt">Comparaison côte à côte</div><div class="rc2" id="ccnt">Ajoutez jusqu'à 3 communes via le bouton ↕ sur chaque carte</div></div>
+          <div id="cl"><div class="empty-s"><span>⚖️</span><div>Ajoutez jusqu'à 3 communes avec le bouton <strong>Comparer</strong> sur les cartes<br><span style="font-size:10px;opacity:0.7">Les communes s'afficheront côte à côte pour comparer tous leurs indicateurs</span></div></div></div>
+        </div>
+      </div>
+
+      <!-- FILTERS accordion -->
+      <div class="filters-tog" onclick="tFilters()">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:18px">🎛️</span>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text)">Choisir mes critères de recherche</div>
+            <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">Commune de référence, critères de vie, budget…</div>
+          </div>
+        </div>
+        <span class="chev" id="filters-chev">▼</span>
+      </div>
+      <div class="filters-panel" id="filters-panel">
+
+        <div class="field-label" style="margin-bottom:8px">Votre commune de référence</div>
+        <div class="card">
+          <div class="dd-wrap">
+            <input class="search-input" id="ci" type="text" placeholder="Ville, commune, code postal…" autocomplete="off" oninput="hIn(this.value)" onkeydown="hKey(event)"/>
+            <div class="dd-menu" id="dd"></div>
+          </div>
+          <div id="ctag"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:14px">
+            <div>
+              <div class="field-label">Proche de cette commune</div>
+              <div style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0" onclick="tProx()">
+                <div class="tog" id="pt"><div class="tog-t"></div></div>
+                <span style="font-size:13px;color:var(--text)">Activer un rayon</span>
+              </div>
+              <div class="radius-chips" id="rw">
+                <div class="rchip on" onclick="sRad(1,this)">1 km</div>
+                <div class="rchip" onclick="sRad(5,this)">5 km</div>
+                <div class="rchip" onclick="sRad(10,this)">10 km</div>
+                <div class="rchip" onclick="sRad(20,this)">20 km</div>
+                <div class="rchip" onclick="sRad(50,this)">50 km</div>
+                <div class="rchip" onclick="sRad(100,this)">100 km</div>
+              </div>
+              <div id="ph" style="font-size:11px;color:var(--text2);margin-top:6px;font-family:'DM Mono',monospace;display:none"></div>
+            </div>
+            <div>
+              <div class="field-label">Type de bien</div>
+              <div class="seg" id="bs">
+                <button class="seg-btn" onclick="sBien('maison',this)">Maison</button>
+                <button class="seg-btn" onclick="sBien('appart',this)">Appartement</button>
+                <button class="seg-btn on" onclick="sBien('tous',this)">Tous</button>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:end">
+            <div>
+              <div class="field-label">Ou filtrer par région</div>
+              <select class="region-sel" id="rs" onchange="sReg(this.value)">
+                <option value="">— Toutes les régions —</option>
+                <optgroup label="Métropole">
+                  <option>Auvergne-Rhône-Alpes</option><option>Bourgogne-Franche-Comté</option>
+                  <option>Bretagne</option><option>Centre-Val de Loire</option><option>Corse</option>
+                  <option>Grand Est</option><option>Hauts-de-France</option><option>Île-de-France</option>
+                  <option>Normandie</option><option>Nouvelle-Aquitaine</option><option>Occitanie</option>
+                  <option>Pays de la Loire</option><option>Provence-Alpes-Côte d'Azur</option>
+                </optgroup>
+                <optgroup label="Outre-mer">
+                  <option>Guadeloupe</option><option>Martinique</option><option>Guyane</option>
+                  <option>La Réunion</option><option>Mayotte</option>
+                </optgroup>
+              </select>
+            </div>
+            <div id="rp"></div>
+          </div>
+        </div>
+
+        <div class="field-label" style="margin-bottom:8px">Vos critères de vie</div>
+        <div class="card">
+          <div class="leg">
+            <div class="lg-s"><div class="lg-d" style="background:var(--green-mid)"></div>1 clic = principal</div>
+            <div class="lg-sep">·</div>
+            <div class="lg-s"><div class="lg-d" style="background:var(--amber)"></div>2 clics = secondaire</div>
+            <div class="lg-sep">·</div>
+            <div class="lg-h">3 clics = désélectionner</div>
+          </div>
+          <div class="sec-divider"><div class="sec-dot" style="background:#B83232"></div>Sécurité</div>
+          <div class="cat-grid" id="g-sec"></div>
+          <div class="sec-divider"><div class="sec-dot" style="background:#185FA5"></div>Cadre de vie</div>
+          <div class="cat-grid" id="g-vie"></div>
+          <div class="sec-divider"><div class="sec-dot" style="background:#1A6B4A"></div>Services & équipements</div>
+          <div class="cat-grid" id="g-srv"></div>
+          <div class="sec-divider"><div class="sec-dot" style="background:#854F0B"></div>Économie & société</div>
+          <div class="cat-grid" id="g-eco"></div>
+          <div class="crit-det" id="cdet"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:10px">
+            <button class="reset-btn" onclick="resetCriteres()" id="resetBtn" style="display:none">↺ Réinitialiser mes critères</button>
+          </div>
+        </div>
+
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.03)">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+            <div style="font-size:13px;font-weight:500;color:var(--text);font-family:'DM Mono',monospace">📍 Bassins de vie — accès rapide</div>
+            <span id="bassinClear" style="display:none;font-size:11px;color:var(--text3);cursor:pointer;font-family:'DM Mono',monospace" onclick="clearBassin()">× Effacer</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-bottom:8px;line-height:1.5">Filtre rapide : trouvez des communes dans un rayon autour d'une grande ville.</div>
+          <div class="bassin-chips" id="bassinChips"></div>
+        </div>
+
+        <div class="more-tog" onclick="tMore()">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text)"><span>Plus de critères</span><span class="more-badge">Pondération & filtres avancés</span></div>
+          <span class="chev" id="chev">▼</span>
+        </div>
+        <div class="more-panel" id="mpanel">
+          <div class="esec">Pondération <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;font-weight:400">— Ajustez le poids de chaque critère sélectionné</span></div>
+          <div id="slid"><div style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace">Sélectionnez des catégories ci-dessus.</div></div>
+          <div class="esec" style="margin-top:14px">Filtres marché</div>
+          <div class="flt-grid">
+            <div class="flt-f"><label>Taxe foncière max (€/an)</label><input type="number" id="txm" value="2000" min="100" max="5000" step="50"/></div>
+            <div class="flt-f"><label>Population min</label>
+              <select id="pm"><option value="0">Toutes tailles</option><option value="5000">+5 000 hab.</option><option value="20000">+20 000 hab.</option><option value="100000">+100 000 hab.</option></select>
+            </div>
+            <div class="flt-f"><label>Type de commune</label>
+              <select id="tf"><option value="">Toutes</option><option value="rural">Rural</option><option value="petite">Petite ville</option><option value="moyenne">Ville moyenne</option><option value="grande">Grande ville</option></select>
+            </div>
+            <div class="flt-f"><label>Trier par</label>
+              <select id="sb"><option value="score">Score global</option><option value="prix">Prix au m²</option><option value="taxe">Taxe foncière</option><option value="evol">Évolution</option><option value="nom">Nom A–Z</option></select>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /filters-panel -->
+
+      <div style="margin:12px 0 6px">
+        <button class="go-btn" id="gbtn" onclick="doSearch()">Analyser et trouver des communes →</button>
+        <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:6px;text-align:center">Sélectionnez des critères ci-dessus puis lancez l'analyse · Sans critères, toutes les communes sont affichées</div>
+      </div>
+    </div>
+
+    <div id="view-fiche" style="display:none"></div>
+  </div>
+</div>
+
+<footer>
+  <strong style="font-family:'DM Serif Display',serif;font-size:14px;color:var(--text)">tuveuxvivreou</strong> — version bêta · prototype de test<br>
+  <span style="margin-top:4px;display:block">Sources : <a href="#">data.gouv.fr</a> · <a href="#">DVF</a> · <a href="#">géorisques.gouv.fr</a> · <a href="#">interieur.gouv.fr</a> · <a href="#">DGFIP</a></span>
+</footer>
+
+<script>
+const CD=[
+  {name:"Marseille",lat:43.2965,lng:5.3698,dept:"Bouches-du-Rhône (13)",region:"Provence-Alpes-Côte d'Azur",type:"grande",pop:870000,dens:3560,evolPop:+1.2,pM:3800,pA:3200,evol:16,taxe:1450},
+  {name:"Aix-en-Provence",lat:43.5297,lng:5.4474,dept:"Bouches-du-Rhône (13)",region:"Provence-Alpes-Côte d'Azur",type:"grande",pop:145000,dens:610,evolPop:+2.8,pM:5100,pA:4200,evol:12,taxe:1100},
+  {name:"Aubagne",lat:43.2946,lng:5.5711,dept:"Bouches-du-Rhône (13)",region:"Provence-Alpes-Côte d'Azur",type:"moyenne",pop:47000,dens:540,evolPop:+1.9,pM:3400,pA:2900,evol:10,taxe:980},
+  {name:"Cassis",lat:43.2144,lng:5.5386,dept:"Bouches-du-Rhône (13)",region:"Provence-Alpes-Côte d'Azur",type:"petite",pop:7700,dens:210,evolPop:+0.4,pM:7200,pA:5800,evol:20,taxe:750},
+  {name:"La Ciotat",lat:43.1744,lng:5.6083,dept:"Bouches-du-Rhône (13)",region:"Provence-Alpes-Côte d'Azur",type:"moyenne",pop:36000,dens:490,evolPop:+3.1,pM:4800,pA:4000,evol:18,taxe:820},
+  {name:"Martigues",lat:43.4054,lng:5.0494,dept:"Bouches-du-Rhône (13)",region:"Provence-Alpes-Côte d'Azur",type:"moyenne",pop:49000,dens:280,evolPop:+0.6,pM:3200,pA:2700,evol:8,taxe:1050},
+  {name:"Salon-de-Provence",lat:43.6406,lng:5.0970,dept:"Bouches-du-Rhône (13)",region:"Provence-Alpes-Côte d'Azur",type:"moyenne",pop:44000,dens:320,evolPop:+2.2,pM:3000,pA:2500,evol:9,taxe:970},
+  {name:"Istres",lat:43.5147,lng:4.9886,dept:"Bouches-du-Rhône (13)",region:"Provence-Alpes-Côte d'Azur",type:"moyenne",pop:42000,dens:190,evolPop:-0.3,pM:2500,pA:2100,evol:7,taxe:920},
+  {name:"Arles",lat:43.6767,lng:4.6278,dept:"Bouches-du-Rhône (13)",region:"Provence-Alpes-Côte d'Azur",type:"moyenne",pop:52000,dens:60,evolPop:-0.8,pM:2400,pA:2000,evol:10,taxe:860},
+  {name:"Toulon",lat:43.1242,lng:5.9280,dept:"Var (83)",region:"Provence-Alpes-Côte d'Azur",type:"grande",pop:176000,dens:4100,evolPop:-0.5,pM:3300,pA:2800,evol:13,taxe:1180},
+  {name:"Hyères",lat:43.1198,lng:6.1286,dept:"Var (83)",region:"Provence-Alpes-Côte d'Azur",type:"moyenne",pop:57000,dens:380,evolPop:+1.7,pM:4100,pA:3400,evol:15,taxe:890},
+  {name:"La Seyne-sur-Mer",lat:43.1017,lng:5.8836,dept:"Var (83)",region:"Provence-Alpes-Côte d'Azur",type:"moyenne",pop:63000,dens:1920,evolPop:+0.2,pM:3000,pA:2600,evol:9,taxe:1020},
+  {name:"Fréjus",lat:43.4329,lng:6.7369,dept:"Var (83)",region:"Provence-Alpes-Côte d'Azur",type:"moyenne",pop:53000,dens:350,evolPop:+3.4,pM:3900,pA:3200,evol:14,taxe:810},
+  {name:"Sainte-Maxime",lat:43.3094,lng:6.6383,dept:"Var (83)",region:"Provence-Alpes-Côte d'Azur",type:"petite",pop:14000,dens:160,evolPop:+4.1,pM:6800,pA:5500,evol:22,taxe:680},
+  {name:"Nice",lat:43.7102,lng:7.2620,dept:"Alpes-Maritimes (06)",region:"Provence-Alpes-Côte d'Azur",type:"grande",pop:340000,dens:4900,evolPop:+0.3,pM:5400,pA:4600,evol:11,taxe:1250},
+  {name:"Antibes",lat:43.5808,lng:7.1231,dept:"Alpes-Maritimes (06)",region:"Provence-Alpes-Côte d'Azur",type:"grande",pop:75000,dens:1740,evolPop:+1.5,pM:5800,pA:4900,evol:13,taxe:820},
+];
+const FD={
+  "Marseille":{badges:[{l:"Grande ville",bg:"#E6F2EB",c:"#1A6B4A"},{l:"Marché dynamique",bg:"#FBF0DC",c:"#B87A14"},{l:"Façade maritime",bg:"#E8EEF8",c:"#4A7CC7"}],inds:{"🚨 Criminalité":[{l:"Vols avec violence",v:"Élevé · 420 cas/100k hab.",s:28,n:"Mauvais",col:"#B83232"},{l:"Cambriolages",v:"Élevé · 210 cas/100k hab.",s:35,n:"Mauvais",col:"#B83232"},{l:"Trafic de drogue",v:"Très élevé (signalé)",s:22,n:"Mauvais",col:"#B83232"},{l:"Agressions physiques",v:"Élevé · 380 cas/100k hab.",s:30,n:"Mauvais",col:"#B83232"},{l:"Vols sans violence",v:"Élevé · 1 240 cas/100k hab.",s:32,n:"Mauvais",col:"#B83232"},{l:"Taux d'élucidation",v:"32% des affaires résolues",s:42,n:"Correct",col:"#B87A14"}],"🛡️ Sécurité publique":[{l:"Présence policière",v:"Multi-arrondissements",s:65,n:"Insuffisant",col:"#C86A1A"},{l:"QPV (zone prioritaire)",v:"12 zones",s:20,n:"Mauvais",col:"#B83232"},{l:"Vidéosurveillance",v:"Déployée",s:60,n:"Correct",col:"#B87A14"},{l:"Éclairage public",v:"Inégal selon quartier",s:50,n:"Insuffisant",col:"#C86A1A"}],"🏥 Santé":[{l:"Médecins généralistes",v:"13 pour 1 000 hab.",s:78,n:"Bon",col:"#2D9E6B"},{l:"Hôpitaux (CHU)",v:"2 CHU sur place",s:100,n:"Excellent",col:"#1A6B4A"},{l:"Désert médical",v:"Nord de la ville",s:55,n:"Insuffisant",col:"#C86A1A"},{l:"Pharmacies",v:"200+ en ville",s:90,n:"Excellent",col:"#1A6B4A"}],"🌲 Nature & cadre":[{l:"Espaces verts",v:"110 ha",s:62,n:"Correct",col:"#B87A14"},{l:"Qualité de l'air",v:"Moyen (IQA 5/10)",s:55,n:"Insuffisant",col:"#C86A1A"},{l:"Accès à la mer",v:"Direct — Vieux-Port",s:100,n:"Excellent",col:"#1A6B4A"},{l:"Niveau sonore",v:"Bruyant — 62 dB moy.",s:38,n:"Mauvais",col:"#B83232"}]},prix:{labels:["2019","2020","2021","2022","2023","2024"],maison:[3100,3300,3500,3700,3750,3800],appart:[2600,2800,2950,3100,3150,3200]},risques:[{l:"Inondation",v:"Modéré (vallons)",t:"warn"},{l:"Canicule",v:"Élevé (+18j/an)",t:"bad"},{l:"Feux de forêt",v:"Élevé (massifs)",t:"bad"},{l:"RGA (retrait argile)",v:"Modéré",t:"warn"},{l:"Submersion 2050",v:"Zones littorales",t:"warn"},{l:"Îlot de chaleur",v:"Fort (centre)",t:"bad"}],avis:[{t:"g",ti:"Point fort — Cadre de vie et dynamisme",tx:"Marseille offre un cadre maritime unique, un CHU de référence et des prix encore accessibles pour une métropole méditerranéenne."},{t:"a",ti:"Point d'attention — Sécurité inégale",tx:"Les écarts entre arrondissements sont très marqués. Le choix du quartier est déterminant sur tous les critères de qualité de vie."}],pol:{maire:{nom:"Benoît Payan",parti:"Parti Socialiste",depuis:"2020",mandat:"2020-2026"},pres2022_t1:[{c:"Jean-Luc Mélenchon",pct:31.2,col:"#CC2443",colText:"#fff"},{c:"Marine Le Pen",pct:26.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:19.4,col:"#FFEB00",colText:"#333"}],participation_pres_t1:63.8,presidentielle2022:[{c:"Marine Le Pen",pct:60.2,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:39.8,col:"#FFEB00",colText:"#333"}],participation_pres:65.2,municipales2020:{liste:"Printemps Marseillais",tete:"Michèle Rubirola",pct:38.4,col:"#E05020"},participation_mun:38.6,tendance:{label:"Ville plurielle, alternances fréquentes",col:"#7A6080",depuis:"2001"}}},
+  "Aix-en-Provence":{badges:[{l:"Ville sûre",bg:"#E6F2EB",c:"#1A6B4A"},{l:"Marché tendu",bg:"#FBF0DC",c:"#B87A14"},{l:"Cadre provençal",bg:"#EAF3DE",c:"#27500A"}],inds:{"🚨 Criminalité":[{l:"Vols avec violence",v:"Faible · 80 cas/100k hab.",s:78,n:"Bon",col:"#2D9E6B"},{l:"Cambriolages",v:"Faible · 50 cas/100k hab.",s:74,n:"Bon",col:"#2D9E6B"},{l:"Trafic de drogue",v:"Faible",s:80,n:"Bon",col:"#2D9E6B"},{l:"Agressions physiques",v:"Faible · 90 cas/100k hab.",s:76,n:"Bon",col:"#2D9E6B"},{l:"Vols sans violence",v:"Modéré · 410 cas/100k hab.",s:72,n:"Bon",col:"#2D9E6B"},{l:"Taux d'élucidation",v:"48% des affaires résolues",s:74,n:"Bon",col:"#2D9E6B"}],"🛡️ Sécurité publique":[{l:"Présence policière",v:"Commissariat central",s:84,n:"Bon",col:"#2D9E6B"},{l:"QPV (zone prioritaire)",v:"1 zone",s:80,n:"Bon",col:"#2D9E6B"},{l:"Vidéosurveillance",v:"Dense en centre-ville",s:82,n:"Bon",col:"#2D9E6B"},{l:"Éclairage public",v:"Très bien couvert",s:86,n:"Excellent",col:"#1A6B4A"}],"🏥 Santé":[{l:"Médecins généralistes",v:"15 pour 1 000 hab.",s:88,n:"Excellent",col:"#1A6B4A"},{l:"Hôpitaux (CHU)",v:"1 CHU à 30 km (Marseille)",s:70,n:"Bon",col:"#2D9E6B"},{l:"Désert médical",v:"Non",s:88,n:"Excellent",col:"#1A6B4A"},{l:"Pharmacies",v:"38 en ville",s:88,n:"Excellent",col:"#1A6B4A"}],"🌲 Nature & cadre":[{l:"Espaces verts",v:"85 ha",s:84,n:"Excellent",col:"#1A6B4A"},{l:"Qualité de l'air",v:"Bonne (IQA 3/10)",s:78,n:"Bon",col:"#2D9E6B"},{l:"Sainte-Victoire",v:"À 10 km",s:90,n:"Excellent",col:"#1A6B4A"},{l:"Niveau sonore",v:"Calme — 48 dB moy.",s:70,n:"Bon",col:"#2D9E6B"}]},prix:{labels:["2019","2020","2021","2022","2023","2024"],maison:[4300,4500,4700,4900,5050,5100],appart:[3500,3700,3850,4000,4150,4200]},risques:[{l:"Inondation",v:"Faible",t:"ok"},{l:"Canicule",v:"Élevé (+16j/an)",t:"bad"},{l:"Feux de forêt",v:"Modéré (périphérie)",t:"warn"},{l:"RGA (retrait argile)",v:"Modéré",t:"warn"},{l:"Submersion 2050",v:"Non concerné",t:"ok"},{l:"Îlot de chaleur",v:"Modéré",t:"warn"}],avis:[{t:"g",ti:"Point fort — Sécurité & qualité de vie",tx:"Aix-en-Provence combine sécurité, services complets et cadre provençal exceptionnel. Idéale pour familles et retraités."},{t:"a",ti:"Point d'attention — Prix élevés",tx:"Marché parmi les plus chers de PACA. +12% en 5 ans, l'accession devient difficile pour les primo-accédants."}],pol:{maire:{nom:"Sophie Joissains",parti:"Les Républicains",depuis:"2023",mandat:"2023-2026"},pres2022_t1:[{c:"Emmanuel Macron",pct:28.6,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:24.8,col:"#003189",colText:"#fff"},{c:"Valérie Pécresse",pct:14.2,col:"#0066CC",colText:"#fff"}],participation_pres_t1:73.2,presidentielle2022:[{c:"Emmanuel Macron",pct:58.4,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:41.6,col:"#003189",colText:"#fff"}],participation_pres:74.1,municipales2020:{liste:"Ensemble pour Aix",tete:"Maryse Joissains-Masini",pct:52.3,col:"#0066CC"},participation_mun:44.2,tendance:{label:"Dominante centre-droite depuis 1978",col:"#0066CC",depuis:"1978"}}},
+  "Aubagne":{badges:[{l:"Prix accessibles",bg:"#E6F2EB",c:"#1A6B4A"},{l:"Proche Marseille",bg:"#FBF0DC",c:"#B87A14"},{l:"Cadre verdoyant",bg:"#EBF2EE",c:"#7A9E8E"}],inds:{"🚨 Criminalité":[{l:"Vols avec violence",v:"Modéré · 140 cas/100k hab.",s:62,n:"Correct",col:"#B87A14"},{l:"Cambriolages",v:"Modéré · 90 cas/100k hab.",s:62,n:"Correct",col:"#B87A14"},{l:"Trafic de drogue",v:"Modéré",s:58,n:"Insuffisant",col:"#C86A1A"},{l:"Agressions physiques",v:"Modéré · 160 cas/100k hab.",s:60,n:"Correct",col:"#B87A14"},{l:"Vols sans violence",v:"Modéré · 620 cas/100k hab.",s:60,n:"Correct",col:"#B87A14"},{l:"Taux d'élucidation",v:"38% des affaires résolues",s:55,n:"Insuffisant",col:"#C86A1A"}],"🛡️ Sécurité publique":[{l:"Présence policière",v:"Commissariat centre",s:72,n:"Bon",col:"#2D9E6B"},{l:"QPV (zone prioritaire)",v:"2 zones",s:60,n:"Correct",col:"#B87A14"},{l:"Vidéosurveillance",v:"Partielle",s:58,n:"Insuffisant",col:"#C86A1A"},{l:"Éclairage public",v:"Correct",s:65,n:"Correct",col:"#B87A14"}],"🏥 Santé":[{l:"Médecins généralistes",v:"10 pour 1 000 hab.",s:68,n:"Correct",col:"#B87A14"},{l:"Hôpitaux (CHU)",v:"1 CHU à 18 km (Marseille)",s:78,n:"Bon",col:"#2D9E6B"},{l:"Désert médical",v:"Non",s:75,n:"Bon",col:"#2D9E6B"},{l:"Pharmacies",v:"14 en ville",s:76,n:"Bon",col:"#2D9E6B"}],"🌲 Nature & cadre":[{l:"Espaces verts",v:"32 ha",s:70,n:"Bon",col:"#2D9E6B"},{l:"Qualité de l'air",v:"Correct (IQA 4/10)",s:65,n:"Correct",col:"#B87A14"},{l:"Massif de l'Étoile",v:"À 5 km",s:85,n:"Excellent",col:"#1A6B4A"},{l:"Niveau sonore",v:"Modéré — 52 dB moy.",s:58,n:"Insuffisant",col:"#C86A1A"}],"💼 Emploi":[{l:"Taux de chômage",v:"11,4% — au-dessus moy. nat.",s:48,n:"Insuffisant",col:"#C86A1A"},{l:"Bassin d'emploi",v:"Marseille-Aubagne (vaste)",s:74,n:"Bon",col:"#2D9E6B"},{l:"Revenu médian",v:"21 400 €/an",s:58,n:"Insuffisant",col:"#C86A1A"},{l:"Télétravail-friendly",v:"Fibre disponible, cadre calme",s:78,n:"Bon",col:"#2D9E6B"},{l:"Création d'entreprises",v:"Dynamique (+8%/an)",s:72,n:"Bon",col:"#2D9E6B"},{l:"Zone ZFE",v:"Non concernée",s:80,n:"Bon",col:"#2D9E6B"}],"🎓 Éducation":[{l:"Écoles primaires",v:"12 écoles publiques",s:74,n:"Bon",col:"#2D9E6B"},{l:"Collèges",v:"4 collèges",s:72,n:"Bon",col:"#2D9E6B"},{l:"Lycées",v:"2 lycées généraux",s:68,n:"Correct",col:"#B87A14"},{l:"Résultats au bac",v:"84% — taux national",s:65,n:"Correct",col:"#B87A14"},{l:"Périscolaire",v:"Cantine + garderie dispo",s:76,n:"Bon",col:"#2D9E6B"},{l:"Université",v:"Aix-Marseille — 20 min",s:72,n:"Bon",col:"#2D9E6B"}],"🚆 Mobilité":[{l:"Transports en commun",v:"Bus RTM + navette gare",s:66,n:"Correct",col:"#B87A14"},{l:"Gare TGV",v:"Oui — ligne Marseille directe",s:82,n:"Bon",col:"#2D9E6B"},{l:"Pistes cyclables",v:"Réseau en développement",s:52,n:"Insuffisant",col:"#C86A1A"},{l:"Bornes recharge VE",v:"8 bornes en ville",s:58,n:"Insuffisant",col:"#C86A1A"},{l:"Autoroute",v:"A50 à 2 km",s:86,n:"Excellent",col:"#1A6B4A"},{l:"Aéroport",v:"Marseille-Provence — 35 min",s:72,n:"Bon",col:"#2D9E6B"}],"🛍️ Commerces":[{l:"Centre commercial",v:"Aubagne Centre + Géant",s:74,n:"Bon",col:"#2D9E6B"},{l:"Marché hebdomadaire",v:"Mardi et jeudi — centre-ville",s:88,n:"Excellent",col:"#1A6B4A"},{l:"Rue commerçante",v:"Rue Maréchal Foch",s:70,n:"Bon",col:"#2D9E6B"},{l:"Grande surface",v:"3 supermarchés",s:76,n:"Bon",col:"#2D9E6B"},{l:"Commerces de bouche",v:"Boulangeries, bouchers, épiciers",s:78,n:"Bon",col:"#2D9E6B"},{l:"Drive",v:"Disponible (Leclerc)",s:74,n:"Bon",col:"#2D9E6B"}],"🎭 Culture & loisirs":[{l:"Cinémas",v:"1 multiplexe",s:62,n:"Correct",col:"#B87A14"},{l:"Musées",v:"Musée de la Légion d'honneur",s:70,n:"Bon",col:"#2D9E6B"},{l:"Bibliothèques",v:"1 médiathèque centrale",s:72,n:"Bon",col:"#2D9E6B"},{l:"Restaurants",v:"Offre correcte — 60+",s:66,n:"Correct",col:"#B87A14"},{l:"Vie nocturne",v:"Limitée",s:42,n:"Correct",col:"#B87A14"},{l:"Associations",v:"200+ associations actives",s:78,n:"Bon",col:"#2D9E6B"}],"⚽ Sport & bien-être":[{l:"Piscine municipale",v:"1 piscine couverte",s:70,n:"Bon",col:"#2D9E6B"},{l:"Salle de sport",v:"3 salles municipales",s:72,n:"Bon",col:"#2D9E6B"},{l:"Clubs sportifs",v:"50+ clubs toutes disciplines",s:76,n:"Bon",col:"#2D9E6B"},{l:"Randonnée",v:"GR98 + massif de l'Étoile",s:88,n:"Excellent",col:"#1A6B4A"},{l:"Pistes cyclables",v:"En développement",s:52,n:"Insuffisant",col:"#C86A1A"},{l:"Stade",v:"Stade de l'Huveaune",s:68,n:"Correct",col:"#B87A14"}]},prix:{labels:["2019","2020","2021","2022","2023","2024"],maison:[2800,2950,3100,3250,3350,3400],appart:[2300,2450,2600,2750,2850,2900]},risques:[{l:"Inondation",v:"Modéré (Huveaune)",t:"warn"},{l:"Canicule",v:"Élevé (+15j/an)",t:"bad"},{l:"Feux de forêt",v:"Modéré",t:"warn"},{l:"RGA (retrait argile)",v:"Modéré",t:"warn"},{l:"Submersion 2050",v:"Non concerné",t:"ok"},{l:"Îlot de chaleur",v:"Faible à modéré",t:"warn"}],avis:[{t:"g",ti:"Point fort — Rapport qualité-prix",tx:"Aubagne offre la proximité de Marseille (20 min en train) avec des prix 10-15% inférieurs et un cadre plus verdoyant."},{t:"a",ti:"Point d'attention — Services limités",tx:"Aubagne reste tributaire de Marseille pour certains services spécialisés (CHU, grandes surfaces culturelles."}],pol:{maire:{nom:"Gérard Gazay",parti:"Les Républicains",depuis:"2014",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:30.1,col:"#003189",colText:"#fff"},{c:"Jean-Luc Mélenchon",pct:27.4,col:"#CC2443",colText:"#fff"},{c:"Emmanuel Macron",pct:22.8,col:"#FFEB00",colText:"#333"}],participation_pres_t1:67.2,presidentielle2022:[{c:"Marine Le Pen",pct:54.6,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:45.4,col:"#FFEB00",colText:"#333"}],participation_pres:68.4,municipales2020:{liste:"Aubagne Citoyenne",tete:"Gérard Gazay",pct:44.1,col:"#0066CC"},participation_mun:36.2,tendance:{label:"Alternances gauche/droite depuis 2000",col:"#7A6080",depuis:"2000"}}},
+};
+
+// === DONNÉES POLITIQUES — 16 communes PACA ===
+// Source : Ministère de l'Intérieur (présidentielles 2022) · data.gouv.fr (municipales 2020)
+// Note : données indicatives pour le proto, à brancher sur les vraies APIs en Phase 2
+const POL={
+  "Marseille":{maire:{nom:"Benoît Payan",parti:"Parti Socialiste",depuis:"2020",mandat:"2020-2026"},pres2022_t1:[{c:"Jean-Luc Mélenchon",pct:31.2,col:"#CC2443",colText:"#fff"},{c:"Marine Le Pen",pct:26.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:19.4,col:"#FFEB00",colText:"#333"}],participation_pres_t1:63.8,presidentielle2022:[{c:"Marine Le Pen",pct:60.2,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:39.8,col:"#FFEB00",colText:"#333"}],participation_pres:65.2,municipales2020:{liste:"Printemps Marseillais",tete:"Michèle Rubirola",pct:38.4,col:"#E05020"},participation_mun:38.6,tendance:{label:"Ville plurielle, alternances fréquentes",col:"#7A6080",depuis:"2001"}},
+  "Aix-en-Provence":{maire:{nom:"Sophie Joissains",parti:"Les Républicains",depuis:"2023",mandat:"2023-2026"},pres2022_t1:[{c:"Emmanuel Macron",pct:28.6,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:24.8,col:"#003189",colText:"#fff"},{c:"Valérie Pécresse",pct:14.2,col:"#0066CC",colText:"#fff"}],participation_pres_t1:73.2,presidentielle2022:[{c:"Emmanuel Macron",pct:58.4,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:41.6,col:"#003189",colText:"#fff"}],participation_pres:74.1,municipales2020:{liste:"Ensemble pour Aix",tete:"Maryse Joissains-Masini",pct:52.3,col:"#0066CC"},participation_mun:44.2,tendance:{label:"Dominante centre-droite depuis 1978",col:"#0066CC",depuis:"1978"}},
+  "Aubagne":{maire:{nom:"Gérard Gazay",parti:"Les Républicains",depuis:"2014",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:30.1,col:"#003189",colText:"#fff"},{c:"Jean-Luc Mélenchon",pct:27.4,col:"#CC2443",colText:"#fff"},{c:"Emmanuel Macron",pct:22.8,col:"#FFEB00",colText:"#333"}],participation_pres_t1:67.2,presidentielle2022:[{c:"Marine Le Pen",pct:54.6,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:45.4,col:"#FFEB00",colText:"#333"}],participation_pres:68.4,municipales2020:{liste:"Aubagne Citoyenne",tete:"Gérard Gazay",pct:44.1,col:"#0066CC"},participation_mun:36.2,tendance:{label:"Alternances gauche/droite depuis 2000",col:"#7A6080",depuis:"2000"}},
+  "Cassis":{maire:{nom:"Danielle Milon",parti:"Les Républicains",depuis:"2008",mandat:"2020-2026"},pres2022_t1:[{c:"Emmanuel Macron",pct:32.4,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:24.1,col:"#003189",colText:"#fff"},{c:"Éric Zemmour",pct:13.8,col:"#444",colText:"#fff"}],participation_pres_t1:78.4,presidentielle2022:[{c:"Emmanuel Macron",pct:62.1,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:37.9,col:"#003189",colText:"#fff"}],participation_pres:79.8,municipales2020:{liste:"Cassis Avenir",tete:"Danielle Milon",pct:64.7,col:"#0066CC"},participation_mun:62.4,tendance:{label:"Dominante centre-droite continue",col:"#0066CC",depuis:"1995"}},
+  "La Ciotat":{maire:{nom:"Arlette Salvo",parti:"Les Républicains",depuis:"2020",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:31.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:24.2,col:"#FFEB00",colText:"#333"},{c:"Jean-Luc Mélenchon",pct:18.1,col:"#CC2443",colText:"#fff"}],participation_pres_t1:69.4,presidentielle2022:[{c:"Marine Le Pen",pct:55.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:44.2,col:"#FFEB00",colText:"#333"}],participation_pres:71.2,municipales2020:{liste:"La Ciotat Ensemble",tete:"Arlette Salvo",pct:48.6,col:"#0066CC"},participation_mun:42.1,tendance:{label:"Alternances gauche/droite",col:"#7A6080",depuis:"2014"}},
+  "Martigues":{maire:{nom:"Gaby Charroux",parti:"Parti Communiste Français",depuis:"2009",mandat:"2020-2026"},pres2022_t1:[{c:"Jean-Luc Mélenchon",pct:32.4,col:"#CC2443",colText:"#fff"},{c:"Marine Le Pen",pct:28.6,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:18.2,col:"#FFEB00",colText:"#333"}],participation_pres_t1:66.8,presidentielle2022:[{c:"Marine Le Pen",pct:51.2,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:48.8,col:"#FFEB00",colText:"#333"}],participation_pres:68.4,municipales2020:{liste:"Martigues à Cœur",tete:"Gaby Charroux",pct:54.8,col:"#CC2443"},participation_mun:42.7,tendance:{label:"Bastion communiste historique",col:"#CC2443",depuis:"1959"}},
+  "Salon-de-Provence":{maire:{nom:"Nicolas Isnard",parti:"Les Républicains",depuis:"2014",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:29.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:25.4,col:"#FFEB00",colText:"#333"},{c:"Jean-Luc Mélenchon",pct:18.6,col:"#CC2443",colText:"#fff"}],participation_pres_t1:69.2,presidentielle2022:[{c:"Marine Le Pen",pct:52.4,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:47.6,col:"#FFEB00",colText:"#333"}],participation_pres:70.8,municipales2020:{liste:"Salon Avenir",tete:"Nicolas Isnard",pct:56.2,col:"#0066CC"},participation_mun:43.6,tendance:{label:"Dominante centre-droite",col:"#0066CC",depuis:"2001"}},
+  "Istres":{maire:{nom:"François Bernardini",parti:"Divers gauche",depuis:"2001",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:32.1,col:"#003189",colText:"#fff"},{c:"Jean-Luc Mélenchon",pct:24.8,col:"#CC2443",colText:"#fff"},{c:"Emmanuel Macron",pct:20.4,col:"#FFEB00",colText:"#333"}],participation_pres_t1:65.4,presidentielle2022:[{c:"Marine Le Pen",pct:54.2,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:45.8,col:"#FFEB00",colText:"#333"}],participation_pres:67.1,municipales2020:{liste:"Istres Démocratique",tete:"François Bernardini",pct:62.4,col:"#D04040"},participation_mun:46.8,tendance:{label:"Stable divers gauche depuis 2001",col:"#D04040",depuis:"2001"}},
+  "Arles":{maire:{nom:"Patrick de Carolis",parti:"Divers droite",depuis:"2020",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:28.4,col:"#003189",colText:"#fff"},{c:"Jean-Luc Mélenchon",pct:25.8,col:"#CC2443",colText:"#fff"},{c:"Emmanuel Macron",pct:23.1,col:"#FFEB00",colText:"#333"}],participation_pres_t1:69.8,presidentielle2022:[{c:"Marine Le Pen",pct:51.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:48.2,col:"#FFEB00",colText:"#333"}],participation_pres:71.4,municipales2020:{liste:"Arles Ensemble",tete:"Patrick de Carolis",pct:46.4,col:"#4A8CC8"},participation_mun:50.2,tendance:{label:"Alternances fréquentes",col:"#7A6080",depuis:"2014"}},
+  "Toulon":{maire:{nom:"Hubert Falco",parti:"Les Républicains",depuis:"2001",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:30.4,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:25.2,col:"#FFEB00",colText:"#333"},{c:"Éric Zemmour",pct:13.4,col:"#444",colText:"#fff"}],participation_pres_t1:68.4,presidentielle2022:[{c:"Marine Le Pen",pct:54.6,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:45.4,col:"#FFEB00",colText:"#333"}],participation_pres:70.1,municipales2020:{liste:"Toulon Cap d'Avenir",tete:"Hubert Falco",pct:51.4,col:"#0066CC"},participation_mun:38.4,tendance:{label:"Bastion centre-droit depuis 2001",col:"#0066CC",depuis:"2001"}},
+  "Hyères":{maire:{nom:"Jean-Pierre Giran",parti:"Les Républicains",depuis:"2008",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:28.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:27.4,col:"#FFEB00",colText:"#333"},{c:"Éric Zemmour",pct:13.1,col:"#444",colText:"#fff"}],participation_pres_t1:74.2,presidentielle2022:[{c:"Marine Le Pen",pct:51.6,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:48.4,col:"#FFEB00",colText:"#333"}],participation_pres:75.8,municipales2020:{liste:"Hyères Demain",tete:"Jean-Pierre Giran",pct:54.8,col:"#0066CC"},participation_mun:48.6,tendance:{label:"Stable centre-droit",col:"#0066CC",depuis:"2008"}},
+  "La Seyne-sur-Mer":{maire:{nom:"Nathalie Bicais",parti:"Les Républicains",depuis:"2020",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:34.2,col:"#003189",colText:"#fff"},{c:"Jean-Luc Mélenchon",pct:23.4,col:"#CC2443",colText:"#fff"},{c:"Emmanuel Macron",pct:19.8,col:"#FFEB00",colText:"#333"}],participation_pres_t1:64.8,presidentielle2022:[{c:"Marine Le Pen",pct:58.4,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:41.6,col:"#FFEB00",colText:"#333"}],participation_pres:66.2,municipales2020:{liste:"La Seyne pour Tous",tete:"Nathalie Bicais",pct:42.4,col:"#0066CC"},participation_mun:38.8,tendance:{label:"Bascule droite en 2020",col:"#0066CC",depuis:"2020"}},
+  "Fréjus":{maire:{nom:"David Rachline",parti:"Rassemblement National",depuis:"2014",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:35.4,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:23.8,col:"#FFEB00",colText:"#333"},{c:"Éric Zemmour",pct:14.2,col:"#444",colText:"#fff"}],participation_pres_t1:71.2,presidentielle2022:[{c:"Marine Le Pen",pct:58.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:41.2,col:"#FFEB00",colText:"#333"}],participation_pres:72.4,municipales2020:{liste:"Fréjus pour Tous",tete:"David Rachline",pct:50.2,col:"#003189"},participation_mun:42.4,tendance:{label:"Bastion RN depuis 2014",col:"#003189",depuis:"2014"}},
+  "Sainte-Maxime":{maire:{nom:"Vincent Morisse",parti:"Les Républicains",depuis:"2014",mandat:"2020-2026"},pres2022_t1:[{c:"Emmanuel Macron",pct:30.1,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:27.4,col:"#003189",colText:"#fff"},{c:"Éric Zemmour",pct:14.8,col:"#444",colText:"#fff"}],participation_pres_t1:75.4,presidentielle2022:[{c:"Emmanuel Macron",pct:54.2,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:45.8,col:"#003189",colText:"#fff"}],participation_pres:77.1,municipales2020:{liste:"Sainte-Maxime Avenir",tete:"Vincent Morisse",pct:58.6,col:"#0066CC"},participation_mun:54.8,tendance:{label:"Stable centre-droit",col:"#0066CC",depuis:"2008"}},
+  "Nice":{maire:{nom:"Christian Estrosi",parti:"Horizons",depuis:"2017",mandat:"2020-2026"},pres2022_t1:[{c:"Marine Le Pen",pct:26.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:26.4,col:"#FFEB00",colText:"#333"},{c:"Éric Zemmour",pct:14.2,col:"#444",colText:"#fff"}],participation_pres_t1:71.4,presidentielle2022:[{c:"Marine Le Pen",pct:50.8,col:"#003189",colText:"#fff"},{c:"Emmanuel Macron",pct:49.2,col:"#FFEB00",colText:"#333"}],participation_pres:72.8,municipales2020:{liste:"Nice Ensemble",tete:"Christian Estrosi",pct:59.4,col:"#0066CC"},participation_mun:42.6,tendance:{label:"Centre-droit depuis 2008",col:"#0066CC",depuis:"2008"}},
+  "Antibes":{maire:{nom:"Jean Leonetti",parti:"Les Républicains",depuis:"1995",mandat:"2020-2026"},pres2022_t1:[{c:"Emmanuel Macron",pct:27.8,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:25.4,col:"#003189",colText:"#fff"},{c:"Éric Zemmour",pct:14.6,col:"#444",colText:"#fff"}],participation_pres_t1:72.4,presidentielle2022:[{c:"Emmanuel Macron",pct:53.4,col:"#FFEB00",colText:"#333"},{c:"Marine Le Pen",pct:46.6,col:"#003189",colText:"#fff"}],participation_pres:74.1,municipales2020:{liste:"Antibes Juan-les-Pins",tete:"Jean Leonetti",pct:54.8,col:"#0066CC"},participation_mun:44.2,tendance:{label:"Bastion centre-droit historique",col:"#0066CC",depuis:"1995"}},
+};
+
+const CATS={
+  "g-sec":[
+    {k:"crim",i:"🚨",n:"Criminalité",s:"Délinquance, vols, agressions",c:["Indice délinquance","Cambriolages","Vols avec violence","Vols sans violence","Agressions","Taux d'élucidation"]},
+    {k:"sec",i:"🛡️",n:"Sécurité publique",s:"Police, vidéosurveillance",c:["Police / gendarmerie","Vidéosurveillance","Éclairage public","Médiation sociale","Bornes d'urgence","Brigade de nuit"]}
+  ],
+  "g-vie":[
+    {k:"nat",i:"🌲",n:"Nature & cadre",s:"Espaces verts, air, calme",c:["Espaces verts (parcs)","Qualité de l'air (IQA)","Forêts proches","Niveau sonore","Rivières / lacs","Montagne"]},
+    {k:"cli",i:"🌊",n:"Risques climatiques",s:"Inondations, canicule, feux",c:["Inondations","Canicule","Submersion marine (2050)","Feux de forêt","RGA (retrait argile)","Îlot de chaleur"]},
+    {k:"dem",i:"👥",n:"Démographie",s:"Âge, dynamisme, attractivité",c:["Évolution population","Âge médian","Part jeunes (- 25 ans)","Part seniors (+ 65 ans)","Solde migratoire","Densité"]},
+    {k:"env",i:"🌍",n:"Environnement",s:"Eau, pollution, énergie",c:["Eau potable (qualité)","Sites BASOL (sols pollués)","Centrales nucléaires (km)","Sites SEVESO","Agriculture locale","ENR (énergies renouvelables)"]}
+  ],
+  "g-srv":[
+    {k:"edu",i:"🎓",n:"Éducation",s:"Écoles, collèges, résultats",c:["Écoles primaires","Collèges","Lycées","Résultats au bac","Périscolaire (cantine)","Université / BTS"]},
+    {k:"san",i:"🏥",n:"Santé",s:"Hôpitaux, médecins, déserts",c:["CHU (centre hospitalier)","Médecins généralistes","Désert médical","Spécialistes","Pharmacies","PMR (mobilité réduite)"]},
+    {k:"mob",i:"🚆",n:"Mobilité",s:"Transports, vélo, VE, routes",c:["Transports en commun","Gare TGV","Pistes cyclables & véloroutes","Bornes de recharge électrique","Autoroute","Aéroport"]},
+    {k:"com",i:"🛍️",n:"Commerces",s:"Centres, marchés, rues",c:["Centre commercial","Marché hebdomadaire","Rue commerçante","Grande surface","Commerces de bouche","Drive"]},
+    {k:"cul",i:"🎭",n:"Culture & loisirs",s:"Cinémas, musées, sorties",c:["Cinémas","Théâtres / musées","Bibliothèques","Restaurants","Vie nocturne","Associations"]},
+    {k:"spt",i:"⚽",n:"Sport & bien-être",s:"Piscines, clubs, sentiers",c:["Piscine municipale","Salle de sport","Clubs sportifs","Randonnée","Pistes cyclables / vélo","Stade"]}
+  ],
+  "g-eco":[
+    {k:"emp",i:"💼",n:"Emploi",s:"Chômage, bassins, revenus",c:["Taux de chômage","Bassin d'emploi","Revenu médian","Télétravail-friendly","Création entreprises","ZFE (zone à faibles émissions)"]},
+    {k:"tis",i:"🏘️",n:"Tissu social",s:"Logement, mixité, revenus",c:["% logement social (HLM)","QPV (quartier prioritaire)","Mixité sociale","Revenu médian/quartier","Turn-over population","% propriétaires"]},
+    {k:"fis",i:"💶",n:"Fiscalité locale",s:"Taxes, aides, zonage",c:["Taxe foncière (taux)","Taxe habitation rés. sec.","Aides locales à l'achat","Zone ANRU (rénovation urbaine)","Zone tendue (loyers)","Droits de mutation"]}
+  ]
+};
+
+// ONBOARDING — étape 2 reformulée + nouveaux choix
+const STEPS=[
+  {
+    q:"Vous cherchez quel type de bien ?",
+    hint:"Cela influence les prix affichés.",
+    type:"single",key:"bien",
+    options:[
+      {v:"maison",icon:"🏠",label:"Une maison",sub:"Avec jardin, terrain"},
+      {v:"appart",icon:"🏢",label:"Un appartement",sub:"En résidence, copropriété"},
+      {v:"tous",icon:"🏘️",label:"Les deux / Pas de préférence",sub:"Maison ou appartement"},
+    ]
+  },
+  {
+    q:"Qu'est-ce qui vous amène à chercher ?",
+    hint:"On adapte les recommandations à votre projet.",
+    type:"single",key:"profil",
+    options:[
+      {v:"famille",icon:"👨‍👩‍👧",label:"Acheter pour ma famille",sub:"Écoles, sécurité, espace"},
+      {v:"primo",icon:"🔑",label:"Mon premier achat",sub:"Budget maîtrisé, marché accessible"},
+      {v:"teletravail",icon:"💻",label:"Je passe en télétravail",sub:"Nature, fibre, calme"},
+      {v:"retraite",icon:"🌅",label:"Préparer ma retraite",sub:"Accessibilité, santé, douceur de vivre"},
+      {v:"invest",icon:"📈",label:"Investir dans l'immo",sub:"Rendement, marché locatif"},
+      {v:"campagne",icon:"🌾",label:"Changer de cadre de vie",sub:"Quitter la ville, grand air"},
+      {v:"grandeville",icon:"🏙️",label:"Rester en ville dynamique",sub:"Culture, transports, vie nocturne"},
+      {v:"jeune",icon:"🎒",label:"Études / premier logement",sub:"Mobilité, budget serré"},
+      {v:"eco",icon:"🌱",label:"Vivre de façon éco-responsable",sub:"ENR, mobilités douces, circuits courts"},
+      {v:"autre",icon:"🔍",label:"Simple curiosité / exploration",sub:"Je regarde ce qui existe"},
+    ]
+  },
+  {
+    q:"Qu'est-ce qui compte le plus ?",
+    hint:"Choisissez tout ce qui vous importe.",
+    type:"multi",key:"priorites",
+    options:[
+      {v:"securite",icon:"🛡️",label:"Sécurité",sub:"Délinquance faible"},
+      {v:"nature",icon:"🌲",label:"Nature",sub:"Air, espaces verts"},
+      {v:"sante",icon:"🏥",label:"Santé",sub:"Médecins, hôpitaux"},
+      {v:"ecole",icon:"🎓",label:"Éducation",sub:"Écoles, résultats"},
+      {v:"transport",icon:"🚆",label:"Mobilité",sub:"Transports, vélo, VE"},
+      {v:"prix",icon:"💶",label:"Budget",sub:"Prix et fiscalité"},
+      {v:"emploi",icon:"💼",label:"Emploi",sub:"Marché du travail"},
+      {v:"climat",icon:"🌊",label:"Risques climatiques",sub:"Inondations, canicule"},
+      {v:"social",icon:"🏘️",label:"Tissu social",sub:"Mixité, dynamisme"},
+      {v:"culture",icon:"🎭",label:"Culture & loisirs",sub:"Sorties, événements"},
+      {v:"sport",icon:"⚽",label:"Sport & bien-être",sub:"Équipements sportifs"},
+      {v:"commerce",icon:"🛍️",label:"Commerces",sub:"Accès quotidien"},
+    ]
+  }
+];
+
+const ALL=Object.values(CATS).flat();
+let ST={commune:null,region:null,bien:"tous",prox:false,rad:1,more:false,pri:{},chk:{},wgt:{}};
+let FAV=[],CMP=[],LAST=[],ddF=[],ddI=-1,curTab="r",chartI=null;
+let ONB={bien:null,profil:null,priorites:[],step:1};
+let DIRTY=true; // état "à analyser" — true au démarrage, false après chaque run()
+
+// === COMMUNE ACTUELLE de l'utilisateur ===
+let CUR_COMMUNE=null; // {name,dept,pM,pA,taxe,score,...}
+
+// Base étendue de grandes villes françaises (référence pour "Ma situation")
+const BIG_CITIES=[
+  {name:"Paris",dept:"Paris (75)",region:"Île-de-France",pop:2100000,dens:20500,pM:11500,pA:10800,evol:5,taxe:1100,evolPop:-0.2},
+  {name:"Lyon",dept:"Rhône (69)",region:"Auvergne-Rhône-Alpes",pop:520000,dens:11000,pM:5800,pA:5200,evol:9,taxe:1050,evolPop:+0.8},
+  {name:"Toulouse",dept:"Haute-Garonne (31)",region:"Occitanie",pop:490000,dens:4200,pM:4100,pA:3800,evol:11,taxe:980,evolPop:+1.4},
+  {name:"Bordeaux",dept:"Gironde (33)",region:"Nouvelle-Aquitaine",pop:260000,dens:5500,pM:5400,pA:4900,evol:14,taxe:1180,evolPop:+1.1},
+  {name:"Lille",dept:"Nord (59)",region:"Hauts-de-France",pop:235000,dens:6800,pM:3600,pA:3300,evol:8,taxe:1240,evolPop:+0.4},
+  {name:"Nantes",dept:"Loire-Atlantique (44)",region:"Pays de la Loire",pop:320000,dens:5000,pM:4700,pA:4100,evol:13,taxe:920,evolPop:+1.6},
+  {name:"Strasbourg",dept:"Bas-Rhin (67)",region:"Grand Est",pop:285000,dens:3500,pM:3900,pA:3500,evol:9,taxe:1100,evolPop:+0.5},
+  {name:"Montpellier",dept:"Hérault (34)",region:"Occitanie",pop:300000,dens:5300,pM:4200,pA:3700,evol:12,taxe:980,evolPop:+1.5},
+  {name:"Rennes",dept:"Ille-et-Vilaine (35)",region:"Bretagne",pop:225000,dens:4400,pM:4500,pA:4000,evol:13,taxe:870,evolPop:+1.3},
+  {name:"Grenoble",dept:"Isère (38)",region:"Auvergne-Rhône-Alpes",pop:160000,dens:8800,pM:3300,pA:2900,evol:7,taxe:1180,evolPop:+0.2},
+  {name:"Dijon",dept:"Côte-d'Or (21)",region:"Bourgogne-Franche-Comté",pop:160000,dens:3800,pM:3100,pA:2750,evol:6,taxe:980,evolPop:+0.3},
+  {name:"Reims",dept:"Marne (51)",region:"Grand Est",pop:180000,dens:4400,pM:2700,pA:2400,evol:5,taxe:1100,evolPop:-0.1},
+  {name:"Le Havre",dept:"Seine-Maritime (76)",region:"Normandie",pop:170000,dens:3800,pM:2500,pA:2100,evol:4,taxe:1320,evolPop:-0.6},
+  {name:"Saint-Étienne",dept:"Loire (42)",region:"Auvergne-Rhône-Alpes",pop:175000,dens:1800,pM:1900,pA:1500,evol:2,taxe:1180,evolPop:-0.8},
+  {name:"Tours",dept:"Indre-et-Loire (37)",region:"Centre-Val de Loire",pop:138000,dens:4000,pM:3400,pA:3000,evol:8,taxe:1080,evolPop:+0.4},
+  {name:"Angers",dept:"Maine-et-Loire (49)",region:"Pays de la Loire",pop:155000,dens:3700,pM:3500,pA:3050,evol:10,taxe:920,evolPop:+0.7},
+];
+const CUR_POOL=[...CD,...BIG_CITIES]; // pool combiné pour la recherche
+
+function curCommuneIn(v){
+  const dd=document.getElementById('curCommuneDd');
+  if(v.length<2){dd.classList.remove('open');return}
+  const q=v.toLowerCase().trim();
+  const matches=CUR_POOL.filter(c=>c.name.toLowerCase().includes(q)||c.dept.toLowerCase().includes(q)).slice(0,7);
+  if(!matches.length){dd.classList.remove('open');return}
+  dd.innerHTML=matches.map(c=>`<div class="dd-item" onclick="curCommuneSet('${c.name.replace(/'/g,"\\'")}')">${c.name} <span>${c.dept}</span></div>`).join('');
+  dd.classList.add('open');
+}
+function curCommuneKey(e){if(e.key==='Escape')document.getElementById('curCommuneDd').classList.remove('open')}
+function curCommuneSet(name){
+  const c=CUR_POOL.find(x=>x.name===name);
+  if(!c)return;
+  CUR_COMMUNE={...c,score:fSc(c)};
+  document.getElementById('curCommuneInput').value='';
+  document.getElementById('curCommuneDd').classList.remove('open');
+  const pill=document.getElementById('curCommunePill');
+  pill.style.display='inline-flex';
+  pill.innerHTML=`<span class="cur-pill">📍 ${c.name} — ${c.dept}<span class="x" onclick="curCommuneClear()">×</span></span>`;
+  rList(); // re-render avec deltas
+  // Si on a une fiche ouverte, on la rafraîchit
+}
+function curCommuneClear(){
+  CUR_COMMUNE=null;
+  const pill=document.getElementById('curCommunePill');
+  pill.style.display='none';
+  pill.innerHTML='';
+  rList();
+}
+
+// Helper : génère un delta visuel "↑ 1 200€ vs Lyon" / "↓ 250€ vs Lyon" / "= vs Lyon"
+// kind = 'price' (lower=better), 'tax' (lower=better), 'score' (higher=better), 'evol' (higher=better)
+function deltaVs(commVal, curVal, kind, unit){
+  if(!CUR_COMMUNE||curVal==null)return '';
+  const d=commVal-curVal;
+  if(d===0)return `<div class="cur-delta-line eq"><span class="arr">=</span> identique <span class="ref">vs ${CUR_COMMUNE.name}</span></div>`;
+  let positive;
+  if(kind==='price'||kind==='tax')positive=(d<0); // moins cher = mieux
+  else positive=(d>0); // score/evol : plus haut = mieux
+  const cls=positive?'pos':'neg';
+  const arrow=d>0?'↑':'↓';
+  const abs=Math.abs(d);
+  const formatted=unit==='pts'?abs+' pts':unit==='%'?abs+'%':abs.toLocaleString('fr-FR')+' €';
+  return `<div class="cur-delta-line ${cls}"><span class="arr">${arrow}</span> ${formatted} <span class="ref">vs ${CUR_COMMUNE.name}</span></div>`;
+}
+
+// === BASSINS DE VIE ===
+const BASSINS=[
+  {name:"Marseille",rad:30,label:"Bassin de Marseille"},
+  {name:"Aix-en-Provence",rad:20,label:"Bassin d'Aix"},
+  {name:"Toulon",rad:25,label:"Bassin de Toulon"},
+  {name:"Nice",rad:30,label:"Bassin de Nice"},
+];
+let ACTIVE_BASSIN=null;
+
+function rBassinChips(){
+  const el=document.getElementById('bassinChips');
+  if(!el)return;
+  el.innerHTML=BASSINS.map(b=>`<span class="bassin-chip${ACTIVE_BASSIN===b.name?' on':''}" onclick="setBassin('${b.name}',${b.rad})">📍 ${b.label} <span style="opacity:0.7">(${b.rad} km)</span></span>`).join('');
+}
+
+function setBassin(name,rad){
+  if(ACTIVE_BASSIN===name){clearBassin();return}
+  const c=CD.find(x=>x.name===name);
+  if(!c)return;
+  ST.commune=c;
+  ST.prox=true;
+  ST.rad=rad;
+  ACTIVE_BASSIN=name;
+  // Sync UI : tag commune, toggle prox, rayon
+  rCtag();
+  document.getElementById('pt').classList.add('on');
+  document.getElementById('rw').classList.add('open');
+  document.getElementById('ph').style.display='block';
+  upPH();
+  // Marquer le bon chip rayon comme actif
+  document.querySelectorAll('.rchip').forEach(x=>x.classList.toggle('on',parseInt(x.textContent)===rad));
+  document.getElementById('bassinClear').style.display='inline-block';
+  rBassinChips();
+  setDirty(true);
+}
+
+function clearBassin(){
+  ACTIVE_BASSIN=null;
+  ST.commune=null;
+  ST.prox=false;
+  rCtag();
+  document.getElementById('pt').classList.remove('on');
+  document.getElementById('rw').classList.remove('open');
+  document.getElementById('ph').style.display='none';
+  document.getElementById('bassinClear').style.display='none';
+  rBassinChips();
+  setDirty(true);
+}
+
+function setDirty(v){
+  DIRTY=v;
+  const btn=document.getElementById('gbtn');
+  if(!btn)return;
+  if(v){
+    btn.classList.remove('disabled');
+    btn.textContent='Analyser et trouver des communes →';
+  }else{
+    btn.classList.add('disabled');
+    btn.textContent='✓ Résultats à jour — modifiez un critère pour relancer';
+  }
+}
+
+function resetCriteres(){
+  if(!confirm('Réinitialiser tous vos critères de recherche ? Cette action effacera vos sélections (catégories, pondérations, filtres).'))return;
+  ST.pri={};ST.chk={};ST.wgt={};ST.more=false;
+  rCards();rDet();rSlid();
+  document.getElementById('mpanel').classList.remove('open');
+  document.getElementById('chev').classList.remove('open');
+  upResetBtnVisibility();
+  setDirty(true);
+}
+
+function upResetBtnVisibility(){
+  const hasAnyCriterion=Object.values(ST.pri||{}).some(v=>v>0);
+  const btn=document.getElementById('resetBtn');
+  if(btn)btn.style.display=hasAnyCriterion?'inline-block':'none';
+}
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
+function isInOnb(){return document.getElementById('screen-onboarding')?.classList.contains('active')}
+function confirmOnbExit(){
+  const hasProgress=ONB.bien||ONB.profil||(ONB.priorites&&ONB.priorites.length>0);
+  if(!hasProgress)return true;
+  return confirm('Quitter le démarrage guidé ?\n\nVos réponses ne seront pas sauvegardées.');
+}
+function goLanding(skipConfirm){if(!skipConfirm&&isInOnb()&&!confirmOnbExit())return;show('screen-landing')}
+function goExpert(skipConfirm){if(!skipConfirm&&isInOnb()&&!confirmOnbExit())return;show('screen-expert');rCards();rFav();rCmp();document.getElementById('filters-panel').classList.add('open');document.getElementById('filters-chev').classList.add('open')}
+function goOnboarding(skipConfirm){if(!skipConfirm&&isInOnb()&&!confirmOnbExit())return;ONB={bien:null,profil:null,priorites:[],step:1};show('screen-onboarding');renderStep(1)}
+
+function renderStep(n){
+  ONB.step=n;
+  [1,2,3].forEach(i=>{const d=document.getElementById('dot'+i);d.className='onb-dot'+(i<n?' done':i===n?' active':'')});
+  const step=STEPS[n-1];
+  const isSingle=step.type==='single';
+  const sel=ONB[step.key];
+  const isGrid=step.options.length>3;
+  const optH=step.options.map(o=>{
+    const isSel=isSingle?sel===o.v:(sel||[]).includes(o.v);
+    return`<div class="onb-opt${isSel?' sel':''}" onclick="selOpt(${n},'${o.v}')">
+      <div class="opt-ico">${o.icon}</div>
+      <div><div class="opt-lbl">${o.label}</div><div class="opt-sub">${o.sub}</div></div>
+    </div>`
+  }).join('');
+  const hasVal=isSingle?!!ONB[step.key]:(ONB[step.key]||[]).length>0;
+  const btnLbl=n<3?'Continuer →':'Voir mes résultats →';
+  document.getElementById('onb-content').innerHTML=`
+    <div class="onb-q">${step.q}</div>
+    <div class="onb-hint">${step.hint}</div>
+    <div class="${isGrid?'onb-grid':'onb-opts'}">${optH}</div>
+    <button class="onb-cta${hasVal?' ready':''}" onclick="nextStep(${n})">${btnLbl}</button>
+    `
+}
+
+function selOpt(n,val){
+  const step=STEPS[n-1];
+  if(step.type==='single'){ONB[step.key]=val}
+  else{const arr=ONB[step.key]||[];const idx=arr.indexOf(val);if(idx>=0)arr.splice(idx,1);else arr.push(val);ONB[step.key]=arr}
+  renderStep(n)
+}
+
+function nextStep(n){if(n<3)renderStep(n+1);else{applyOnbToExpert();showOnbResults()}}
+
+function applyOnbToExpert(){
+  if(ONB.bien)sBienDirect(ONB.bien);
+  const profMap={
+    famille:['edu','sec'],primo:['fis','sec'],retraite:['san','nat'],
+    teletravail:['nat','env'],invest:['fis'],campagne:['nat','env'],
+    grandeville:['mob','cul'],residec:['nat','cli'],jeune:['mob','cul','emp'],eco:['nat','env','mob'],autre:[]
+  };
+  const cats=profMap[ONB.profil]||[];
+  const prioMap={securite:'crim',nature:'nat',sante:'san',ecole:'edu',transport:'mob',prix:'fis'};
+  cats.forEach(k=>{ST.pri[k]=1;if(!ST.chk[k]){ST.chk[k]={};const cat=ALL.find(c=>c.k===k);if(cat)cat.c.forEach(x=>{ST.chk[k][x]=true})}});
+  (ONB.priorites||[]).forEach(p=>{const k=prioMap[p];if(k&&!ST.pri[k]){ST.pri[k]=1;if(!ST.chk[k]){ST.chk[k]={};const cat=ALL.find(c=>c.k===k);if(cat)cat.c.forEach(x=>{ST.chk[k][x]=true})}}});
+}
+
+function sBienDirect(v){
+  ST.bien=v;
+  const btns=document.querySelectorAll('#bs .seg-btn');
+  btns.forEach(b=>b.classList.remove('on'));
+  const map={tous:0,maison:1,appart:2};
+  if(btns[map[v]])btns[map[v]].classList.add('on');
+}
+
+function showOnbResults(){
+  goExpert(true);
+  rCards();
+  document.getElementById('filters-panel').classList.remove('open');
+  document.getElementById('filters-chev').classList.remove('open');
+  const btn=document.getElementById('gbtn');
+  btn.classList.add('loading');btn.textContent='Analyse en cours…';
+  setTimeout(()=>{
+    btn.classList.remove('loading');btn.textContent='Analyser et trouver des communes →';
+    run();
+    setTimeout(()=>{const r=document.getElementById('res');if(r)r.scrollIntoView({behavior:'smooth',block:'start'})},100)
+  },700)
+}
+
+function sBien(v,b){ST.bien=v;document.querySelectorAll('#bs .seg-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');setDirty(true)}
+function sReg(v){ST.region=v||null;rRP();setDirty(true)}
+function rRP(){const e=document.getElementById('rp');if(!ST.region){e.innerHTML='';return}e.innerHTML=`<div class="commune-pill">${ST.region}<span class="x" onclick="clReg()">×</span></div>`}
+function clReg(){ST.region=null;document.getElementById('rs').value='';rRP()}
+function tProx(){ST.prox=!ST.prox;document.getElementById('pt').classList.toggle('on',ST.prox);document.getElementById('rw').classList.toggle('open',ST.prox);document.getElementById('ph').style.display=ST.prox?'block':'none';upPH()}
+function sRad(k,e){ST.rad=k;document.querySelectorAll('.rchip').forEach(x=>x.classList.remove('on'));e.classList.add('on');upPH()}
+function upPH(){const n=ST.commune?ST.commune.name:'la commune choisie';document.getElementById('ph').textContent=ST.prox?'Rayon de '+ST.rad+' km autour de '+n+'.':''}
+function tFilters(){
+  document.getElementById('filters-panel').classList.toggle('open');
+  document.getElementById('filters-chev').classList.toggle('open');
+}
+function tMore(){ST.more=!ST.more;document.getElementById('mpanel').classList.toggle('open',ST.more);document.getElementById('chev').classList.toggle('open',ST.more);if(ST.more){rSlid();rCards()}}
+function goTab(t){curTab=t;document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.rpanel').forEach(x=>x.classList.remove('on'));document.getElementById('t-'+t).classList.add('on');document.getElementById('p-'+t).classList.add('on')}
+function cycCat(k){ST.pri[k]=((ST.pri[k]||0)+1)%3;if(!ST.chk[k]){ST.chk[k]={};ALL.find(c=>c.k===k).c.forEach(x=>{ST.chk[k][x]=true})}rCards();rDet();rSlid();upResetBtnVisibility();setDirty(true)}
+function cH(c){const p=ST.pri[c.k]||0;let cl='cat',ba='';if(p===1){cl+=' p1';ba=`<div class="cat-b cb1">Principale</div>`}else if(p===2){cl+=' p2';ba=`<div class="cat-b cb2">Secondaire</div>`}return`<div class="${cl}" onclick="cycCat('${c.k}')"><span class="cat-i">${c.i}</span><div class="cat-n">${c.n}</div><div class="cat-s">${c.s}</div>${ba}</div>`}
+function rCards(){Object.entries(CATS).forEach(([id,cats])=>{const el=document.getElementById(id);if(el)el.innerHTML=cats.map(cH).join('')})}
+function rDet(){const act=ALL.filter(c=>(ST.pri[c.k]||0)>0);const el=document.getElementById('cdet');if(!act.length){el.classList.remove('open');return}el.classList.add('open');el.innerHTML=act.map(c=>{const p=ST.pri[c.k],col=p===1?'var(--green)':'var(--amber)';if(!ST.chk[c.k]){ST.chk[c.k]={};c.c.forEach(x=>{ST.chk[c.k][x]=true})}return`<div class="det-sec"><div class="det-st" style="color:${col}">${c.i} ${c.n}</div><div class="det-items">${c.c.map(x=>{const on=ST.chk[c.k][x]!==false;return`<div class="det-item" onclick="tChk('${c.k}','${x.replace(/'/g,"\\'")}')"><div class="chk${on?' on':''}">${on?'✓':''}</div><div class="det-name">${x}</div></div>`}).join('')}</div></div>`}).join('')}
+function tChk(k,x){if(!ST.chk[k])ST.chk[k]={};ST.chk[k][x]=!ST.chk[k][x];rDet();rSlid();setDirty(true)}
+function getAct(){const out=[];ALL.forEach(c=>{const p=ST.pri[c.k]||0;if(!p)return;c.c.forEach(x=>{if(ST.chk[c.k]&&ST.chk[c.k][x]===false)return;out.push({lbl:x,cat:c.k,pri:p,cn:c.n,ci:c.i})})});return out}
+function rSlid(){const ac=getAct();if(!ac.length){document.getElementById('slid').innerHTML=`<div style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace">Sélectionnez des catégories ci-dessus.</div>`;return}const p1=ac.filter(x=>x.pri===1),p2=ac.filter(x=>x.pri===2);let h='';if(p1.length){h+=`<div style="font-size:10px;color:var(--green);background:var(--green-light);padding:3px 8px;border-radius:10px;margin-bottom:8px;display:inline-block;font-family:'DM Mono',monospace">Critères principaux</div>`;p1.forEach(x=>{const k=x.cat+x.lbl;if(!ST.wgt[k])ST.wgt[k]=80;h+=`<div class="sl-row"><div class="sl-lbl">${x.ci} ${x.lbl}</div><input type="range" min="0" max="100" step="1" value="${ST.wgt[k]}" oninput="upW('${k}',this.value,this.nextElementSibling)"/><div class="sl-val">${ST.wgt[k]}</div></div>`})}if(p2.length){h+=`<div style="font-size:10px;color:var(--amber);background:var(--amber-pale);padding:3px 8px;border-radius:10px;margin:10px 0 8px;display:inline-block;font-family:'DM Mono',monospace">Critères secondaires</div>`;p2.forEach(x=>{const k=x.cat+x.lbl;if(!ST.wgt[k])ST.wgt[k]=40;h+=`<div class="sl-row"><div class="sl-lbl">${x.ci} ${x.lbl}</div><input type="range" min="0" max="100" step="1" value="${ST.wgt[k]}" oninput="upW('${k}',this.value,this.nextElementSibling)"/><div class="sl-val">${ST.wgt[k]}</div></div>`})}document.getElementById('slid').innerHTML=h}
+function upW(k,v,el){ST.wgt[k]=parseInt(v);el.textContent=v;setDirty(true)}
+function hIn(v){const dd=document.getElementById('dd');if(v.length<2){dd.classList.remove('open');return}ddF=CD.filter(c=>c.name.toLowerCase().startsWith(v.toLowerCase()));if(!ddF.length){dd.classList.remove('open');return}dd.innerHTML=ddF.map(c=>`<div class="dd-item" onclick="selC('${c.name}')">${c.name} <span>${c.dept}</span></div>`).join('');dd.classList.add('open');ddI=-1}
+function hKey(e){const its=document.getElementById('dd').querySelectorAll('.dd-item');if(e.key==='ArrowDown'){ddI=Math.min(ddI+1,its.length-1);its.forEach((x,i)=>x.style.background=i===ddI?'var(--bg2)':'');e.preventDefault()}else if(e.key==='ArrowUp'){ddI=Math.max(ddI-1,0);its.forEach((x,i)=>x.style.background=i===ddI?'var(--bg2)':'');e.preventDefault()}else if(e.key==='Enter'){if(ddI>=0)selC(ddF[ddI].name)}else if(e.key==='Escape')document.getElementById('dd').classList.remove('open')}
+function selC(n){ST.commune=CD.find(c=>c.name===n);document.getElementById('ci').value='';document.getElementById('dd').classList.remove('open');rCtag();if(ST.prox)upPH()}
+function rCtag(){const e=document.getElementById('ctag');if(!ST.commune){e.innerHTML='';return}e.innerHTML=`<div class="commune-pill">${ST.commune.name} — ${ST.commune.dept}<span class="x" onclick="clC()">×</span></div>`}
+function clC(){ST.commune=null;rCtag();upPH()}
+function gP(c){if(ST.bien==='maison')return c.pM;if(ST.bien==='appart')return c.pA;return Math.round((c.pM+c.pA)/2)}
+function catScore(c,grp){const seed=c.name.charCodeAt(0)*7+c.name.charCodeAt(1)*3;const vals={'sec':[0,13,26],'vie':[3,17,31],'srv':[6,20,34,41,47,53],'eco':[9,23,37]};const idxs=vals[grp]||[0];const s=idxs.reduce((a,i)=>a+(50+((seed+i*17)%48)),0)/idxs.length;return Math.min(95,Math.max(30,Math.round(s)))}
+function fSc(c){const ac=getAct(),seed=c.name.charCodeAt(0)*7+c.name.charCodeAt(1)*3;if(!ac.length)return Math.min(97,Math.max(55,60+(seed*13)%37));let tot=0,ws=0;ac.forEach((x,i)=>{const w=(ST.wgt[x.cat+x.lbl]||(x.pri===1?80:40))*(x.pri===1?0.7:0.3);const v=50+((seed+i*17)%48);tot+=v*w;ws+=w});return Math.min(97,Math.max(52,Math.round(ws>0?tot/ws:65)))}
+function fDist(c){return Math.round(1+(c.name.charCodeAt(0)*3+c.name.charCodeAt(1))%88)}
+function tFav(e,n){e.stopPropagation();const i=FAV.findIndex(f=>f.name===n);if(i>=0)FAV.splice(i,1);else{const c=LAST.find(x=>x.name===n);if(c)FAV.push({name:c.name,dept:c.dept,score:c.score,prix:c.prix,evol:c.evol,taxe:c.taxe})}upTC();rFav();rList()}
+function tCmp(e,n){e.stopPropagation();const i=CMP.findIndex(c=>c.name===n);if(i>=0)CMP.splice(i,1);else if(CMP.length<3){const c=LAST.find(x=>x.name===n);if(c)CMP.push(c)}upTC();rCmp();rList()}
+function rmFav(n){FAV=FAV.filter(f=>f.name!==n);upTC();rFav();rList()}
+function rmCmp(n){CMP=CMP.filter(c=>c.name!==n);upTC();rCmp();rList()}
+function upTC(){document.getElementById('tc-f').innerHTML=FAV.length?`<span class="tbadge">${FAV.length}</span>`:'';document.getElementById('tc-c').innerHTML=CMP.length?`<span class="tbadge">${CMP.length}</span>`:'';document.getElementById('tc-r').innerHTML=LAST.length?`<span class="tbadge" style="background:var(--border2);color:var(--text2)">${LAST.length}</span>`:''}
+function rFav(){const e=document.getElementById('fl');document.getElementById('fcnt').textContent=FAV.length+' favori'+(FAV.length!==1?'s':'');if(!FAV.length){e.innerHTML=`<div class="empty-s"><span>★</span>Aucun favori pour l'instant.<br>Cliquez sur ★ dans les résultats.</div>`;return}e.innerHTML=FAV.map(f=>`<div class="fav-item"><div><div class="fn">${f.name}</div><div class="fm">${f.dept} · ${f.prix.toLocaleString('fr-FR')} €/m² · taxe ${f.taxe.toLocaleString('fr-FR')} €/an</div></div><div style="display:flex;align-items:center;gap:10px"><div class="fs">${f.score}/100</div><div class="frem" onclick="rmFav('${f.name}')">×</div></div></div>`).join('')}
+function rCmp_old_removed(){}
+let SORT_COL='score',SORT_DIR='desc';
+function sortBy(col){if(SORT_COL===col){SORT_DIR=SORT_DIR==='desc'?'asc':'desc'}else{SORT_COL=col;SORT_DIR=col==='prix'||col==='taxe'?'asc':'desc'}rSort();rList()}
+function rSort(){if(!LAST.length)return;LAST.sort((a,b)=>{const v=SORT_COL==='score'?b.score-a.score:SORT_COL==='prix'?a.prix-b.prix:SORT_COL==='taxe'?a.taxe-b.taxe:SORT_COL==='evol'?b.evol-a.evol:a.name.localeCompare(b.name);return SORT_DIR==='asc'?-v:v})}
+function rList(){
+  const ac=getAct();
+  const p1c=[...new Set(ac.filter(x=>x.pri===1).map(x=>x.ci+' '+x.cn))];
+  const p2c=[...new Set(ac.filter(x=>x.pri===2).map(x=>x.ci+' '+x.cn))];
+  const bl=ST.bien==='maison'?'Maison':ST.bien==='appart'?'Appart':'Prix moyen';
+  const hdr=`<div class="rlist-header">
+    <div class="rh-col" style="justify-content:flex-start;cursor:default">Commune</div>
+    <div class="rh-col ${SORT_COL==='prix'?SORT_DIR:''}" onclick="sortBy('prix')">${bl} €/m²</div>
+    <div class="rh-col ${SORT_COL==='evol'?SORT_DIR:''}" onclick="sortBy('evol')">Évol. 5 ans</div>
+    <div class="rh-col ${SORT_COL==='taxe'?SORT_DIR:''}" onclick="sortBy('taxe')">Taxe fonc.</div>
+    <div class="rh-col" style="cursor:default"></div>
+    <div class="rh-col ${SORT_COL==='score'?SORT_DIR:''}" onclick="sortBy('score')">Score</div>
+  </div>`;
+  if(!LAST.length){document.getElementById('rl').innerHTML=`<div class="empty-s"><span>🔍</span>Aucun résultat.</div>`;return}
+  document.getElementById('rl').innerHTML=hdr+LAST.map((c,i)=>{
+    const ev=(c.evol>=0?'+':'')+c.evol+'%';
+    const evcl=c.evol>=10?'up':c.evol<0?'down':'';
+    const db=c.dist!==null?`<span class="commune-pill" style="margin:0;padding:2px 8px;font-size:10px">≈ ${c.dist} km</span>`:'';
+    const iF=FAV.some(f=>f.name===c.name);
+    const iC=CMP.some(x=>x.name===c.name);
+    const cDis=!iC&&CMP.length>=3;
+    return`<div class="rcard${i===0?' top':''}" onclick="openFiche('${c.name}')">
+      <div>
+        <div class="rrank">#${i+1} — ${c.type.charAt(0).toUpperCase()+c.type.slice(1)}</div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:1px">
+          <div class="rname">${c.name}</div>${db}
+        </div>
+        <div class="rmeta">${c.dept}</div>
+      </div>
+      <div class="rcol" data-label="Prix"><div class="rcol-v">${c.prix.toLocaleString('fr-FR')}</div><div class="rcol-s">€/m²</div>${CUR_COMMUNE?deltaVs(c.prix, ST.bien==='appart'?CUR_COMMUNE.pA:ST.bien==='maison'?CUR_COMMUNE.pM:Math.round((CUR_COMMUNE.pM+CUR_COMMUNE.pA)/2), 'price', '€'):''}</div>
+      <div class="rcol" data-label="Évolution"><div class="rcol-v ${evcl}">${ev}</div><div class="rcol-s">5 ans</div>${CUR_COMMUNE?deltaVs(c.evol, CUR_COMMUNE.evol, 'evol', '%'):''}</div>
+      <div class="rcol" data-label="Taxe foncière"><div class="rcol-v">${c.taxe.toLocaleString('fr-FR')}</div><div class="rcol-s">€/an</div>${CUR_COMMUNE?deltaVs(c.taxe, CUR_COMMUNE.taxe, 'tax', '€'):''}</div>
+      <div class="acol" onclick="event.stopPropagation()">
+        <button class="ibtn${iF?' fav':''}" onclick="tFav(event,'${c.name}')" title="${iF?'Retirer des favoris':'Ajouter aux favoris'}"><span class="ibtn-icon">${iF?'♥':'♡'}</span><span class="ibtn-lbl">${iF?'Favori':'Favoris'}</span></button>
+        <button class="ibtn${iC?' cmp':''}" onclick="${cDis?'event.stopPropagation()':'tCmp(event,\''+c.name+'\')'}" style="${cDis?'opacity:0.35;cursor:not-allowed':''}; position:relative"><div class="cmp-tooltip">${iC?'Retirer de la comparaison':'Ajouter à la liste de comparaison (max 3 communes). Accédez à l\'onglet Comparer pour voir les communes côte à côte.'}</div><svg width="14" height="13" viewBox="0 0 14 13" fill="none" style="flex-shrink:0"><rect x="0.5" y="0.5" width="5.5" height="12" rx="1.5" fill="currentColor" opacity="${iC?'1':'0.35'}"/><rect x="8" y="0.5" width="5.5" height="12" rx="1.5" fill="currentColor" opacity="${iC?'1':'0.7'}"/></svg><span class="ibtn-lbl">${iC?'Comparé':'Comparer'}</span></button>
+      </div>
+      <div class="scol">
+        <div style="display:flex;align-items:flex-start;justify-content:flex-end;gap:4px">
+          <div class="snum">${c.score}</div>
+          <span class="ind-tip" data-tip="Score de qualité de vie (0-100) calculé selon vos critères. 1 clic = priorité forte, 2 clics = secondaire. Données indicatives." style="margin-top:4px;flex-shrink:0">?</span>
+        </div>
+        <div class="slbl">/ 100</div>
+        ${CUR_COMMUNE?deltaVs(c.score, CUR_COMMUNE.score, 'score', 'pts'):''}
+        <div class="sbar"><div class="sfill" style="width:${c.score}%"></div></div>
+      </div>
+    </div>`
+  }).join('')
+}
+function doSearch(){const btn=document.getElementById('gbtn');btn.classList.add('loading');btn.textContent='Analyse en cours…';setTimeout(()=>{btn.classList.remove('loading');btn.textContent='Analyser et trouver des communes →';run()},700)}
+function upBudCalc(){const t=parseInt(document.getElementById('budTotal')?.value||0);const s=parseInt(document.getElementById('surface')?.value||1);const px=s>0?Math.round(t/s):0;const el=document.getElementById('budCalc');if(el)el.textContent=px.toLocaleString('fr-FR')+' €/m²';setDirty(true)}
+function run(){const budTot=parseInt(document.getElementById('budTotal')?.value||99999999);const surf=parseInt(document.getElementById('surface')?.value||1);const bud=surf>0?Math.round(budTot/surf):99999;const txm=parseInt(document.getElementById('txm')?.value||99999);const pm=parseInt(document.getElementById('pm')?.value||0);const tf=document.getElementById('tf')?.value||'';const sb=document.getElementById('sb')?.value||'score';let rs=CD.filter(c=>{if(ST.commune&&!ST.prox&&c.name!==ST.commune.name)return false;if(ST.region&&c.region!==ST.region)return false;if(tf&&c.type!==tf)return false;if(gP(c)>bud)return false;if(c.taxe>txm)return false;if(c.pop<pm)return false;return true});if(!rs.length&&!ST.commune&&!ST.region)rs=[...CD];rs=rs.map(c=>({...c,score:fSc(c),prix:gP(c),dist:ST.prox?fDist(c):null}));if(ST.prox&&ST.commune)rs=rs.filter(c=>c.name!==ST.commune.name&&c.dist<=ST.rad);if(sb==='score')rs.sort((a,b)=>b.score-a.score);else if(sb==='prix')rs.sort((a,b)=>a.prix-b.prix);else if(sb==='taxe')rs.sort((a,b)=>a.taxe-b.taxe);else rs.sort((a,b)=>a.name.localeCompare(b.name));LAST=rs;const ac=getAct();const p1c=[...new Set(ac.filter(x=>x.pri===1).map(x=>x.ci+' '+x.cn))];const p2c=[...new Set(ac.filter(x=>x.pri===2).map(x=>x.cn))];let tit=p1c.length?p1c.join(', '):'Toutes communes';if(p2c.length)tit+=' + '+p2c.join(', ');if(ST.region)tit+=' · '+ST.region;if(ST.commune&&!ST.prox)tit+=' · '+ST.commune.name;if(ST.prox&&ST.commune)tit+=' · '+ST.rad+' km de '+ST.commune.name;if(ST.bien!=='tous')tit+=' · '+(ST.bien==='maison'?'Maisons':'Appartements');document.getElementById('rtit').textContent=tit;document.getElementById('rcnt').textContent=rs.length+' commune'+(rs.length>1?'s':'');rList();upTC();rFav();rCmp();goTab('r');setDirty(false)}
+
+const TIPS={
+  "Vols avec violence":"Nombre de vols commis avec menace ou agression physique pour 1 000 habitants. Source : Ministère de l'Intérieur.",
+  "Cambriolages":"Nombre de cambriolages de logements pour 1 000 habitants par an. Source : interieur.gouv.fr.",
+  "Trafic de drogue":"Niveau d'activité de trafic de stupéfiants signalé dans la commune. Source : Ministère de l'Intérieur.",
+  "Agressions physiques":"Nombre de coups et blessures volontaires enregistrés pour 1 000 habitants. Source : interieur.gouv.fr.",
+  "Vols sans violence":"Vols à la tire, pickpockets, vols de véhicules sans agression, pour 1 000 hab. Source : interieur.gouv.fr.",
+  "Taux d'élucidation":"Part des crimes et délits pour lesquels un auteur a été identifié. Plus c'est élevé, mieux c'est.",
+  "Présence policière":"Proximité et niveau de présence de la police nationale ou gendarmerie.",
+  "QPV (zone prioritaire)":"Quartier Prioritaire de la Ville : zones où l'État concentre ses aides sociales car les revenus y sont inférieurs à 60% du revenu médian national.",
+  "Vidéosurveillance":"Couverture du territoire communal par des caméras de surveillance publiques.",
+  "Éclairage public":"Qualité et couverture de l'éclairage nocturne, facteur de sécurité ressenti.",
+  "Médecins généralistes":"Nombre de médecins généralistes pour 1 000 habitants. En dessous de 8, on parle de désert médical.",
+  "Hôpitaux (CHU)":"Centre Hospitalier Universitaire : hôpital de référence pour les soins complexes. Nombre présents + distance au plus proche si absent.",
+  "Désert médical":"Zone où l'accès à un médecin généraliste est insuffisant selon les critères de la DREES (< 2,5 consultations/an accessibles).",
+  "Pharmacies":"Nombre de pharmacies accessibles en centre-ville ou dans un rayon de 10 min à pied.",
+  "Espaces verts":"Surface totale de parcs, jardins publics et espaces naturels en hectares dans la commune.",
+  "Qualité de l'air":"Indice de Qualité de l'Air (IQA) : de 1 (excellent) à 10 (très mauvais). Source : Atmo France.",
+  "Niveau sonore":"Niveau sonore moyen en décibels (dB). En dessous de 45 dB : calme. Au-dessus de 55 dB : bruit notable.",
+  "Accès à la mer":"Distance et facilité d'accès au littoral depuis le centre-ville.",
+  "Sainte-Victoire":"Distance au massif de la Sainte-Victoire, espace naturel protégé emblématique.",
+  "Massif de l'Étoile":"Distance au Massif de l'Étoile, espace naturel entre Marseille et Aubagne.",
+  "Inondation":"Risque d'inondation par débordement de cours d'eau ou ruissellement. Source : géorisques.gouv.fr.",
+  "Canicule":"Nombre de jours supplémentaires de chaleur extrême par an estimés d'ici 2050. Source : Météo-France.",
+  "Feux de forêt":"Niveau de risque incendie selon la végétation et la météo locale. Source : DFCI / géorisques.",
+  "RGA (retrait argile)":"Retrait-Gonflement des Argiles : phénomène qui provoque des fissures dans les bâtiments lors des sécheresses. Concerne votre fondation.",
+  "Submersion 2050":"Risque de submersion marine d'ici 2050 selon les scénarios du GIEC. Source : Climate Central.",
+  "Îlot de chaleur":"Phénomène où une zone urbaine est significativement plus chaude que les espaces ruraux environnants — accentue les canicules.",
+  "Taux de chômage":"Pourcentage de la population active sans emploi. La moyenne nationale est d'environ 7,5%. Source : INSEE.",
+  "Bassin d'emploi":"Zone géographique où vivent les habitants travaillant ensemble dans les mêmes entreprises. Plus le bassin est vaste, plus les opportunités sont nombreuses.",
+  "Revenu médian":"Revenu en dessous duquel se situe la moitié des habitants de la commune. Indicateur du niveau de vie. Source : INSEE.",
+  "Télétravail-friendly":"Disponibilité de la fibre, qualité du cadre de vie, et infrastructure adaptée au télétravail.",
+  "Création d'entreprises":"Évolution du nombre de nouvelles entreprises créées dans la commune sur 12 mois. Indicateur du dynamisme économique.",
+  "Zone ZFE":"Zone à Faibles Émissions : zone urbaine où la circulation des véhicules polluants est restreinte. Source : Ministère de la Transition écologique.",
+  "Écoles primaires":"Nombre d'écoles maternelles et élémentaires publiques dans la commune.",
+  "Collèges":"Nombre de collèges publics dans la commune (élèves de 11 à 15 ans).",
+  "Lycées":"Nombre de lycées dans la commune (élèves de 15 à 18 ans), généraux ou professionnels.",
+  "Résultats au bac":"Taux de réussite au baccalauréat sur la commune (moyenne des lycées). Moyenne nationale : 86%.",
+  "Périscolaire":"Disponibilité de la cantine, garderie et activités après l'école, importants pour les familles.",
+  "Université":"Présence d'une université ou d'établissements d'enseignement supérieur, ou distance à la plus proche.",
+  "Transports en commun":"Couverture en bus, tram, métro ou train de la commune. Réseau RATP/RTM/Ilévia/etc.",
+  "Gare TGV":"Présence d'une gare desservie par le TGV ou liaison rapide vers une métropole.",
+  "Pistes cyclables":"Linéaire de pistes cyclables sécurisées et qualité du réseau pour la mobilité douce.",
+  "Bornes recharge VE":"Nombre de bornes de recharge pour véhicules électriques accessibles publiquement.",
+  "Autoroute":"Distance au péage d'autoroute le plus proche pour les déplacements longue distance.",
+  "Aéroport":"Distance et temps de trajet vers l'aéroport le plus proche.",
+  "Centre commercial":"Présence d'un centre commercial avec hypermarché et boutiques diverses.",
+  "Marché hebdomadaire":"Fréquence et qualité du marché de producteurs et commerces ambulants.",
+  "Rue commerçante":"Existence d'une rue ou zone piétonne commerçante avec boutiques de proximité.",
+  "Grande surface":"Nombre d'hypermarchés ou supermarchés dans la commune.",
+  "Commerces de bouche":"Boulangeries, boucheries, fromageries, primeurs — commerces alimentaires de proximité.",
+  "Drive":"Disponibilité d'un service drive pour récupérer ses courses sans descendre de voiture.",
+  "Cinémas":"Nombre de cinémas dans la commune (multiplexe ou cinéma de quartier).",
+  "Musées":"Présence de musées et d'institutions culturelles permanentes.",
+  "Bibliothèques":"Nombre de bibliothèques municipales et médiathèques.",
+  "Restaurants":"Densité et diversité de l'offre de restauration sur la commune.",
+  "Vie nocturne":"Présence de bars, clubs, et activités nocturnes — important pour les jeunes actifs.",
+  "Associations":"Nombre d'associations actives, indicateur de la vitalité du tissu social local.",
+  "Piscine municipale":"Présence d'une piscine publique couverte ou découverte.",
+  "Salle de sport":"Nombre de salles de sport municipales et équipements sportifs publics.",
+  "Clubs sportifs":"Nombre de clubs sportifs et diversité des disciplines proposées.",
+  "Randonnée":"Accès à des sentiers de randonnée balisés (GR, PR) à proximité.",
+  "Stade":"Présence d'un stade municipal pour les sports collectifs.",
+};
+
+function openFiche(name){const C=CD.find(c=>c.name===name);const D=FD[name];const score=LAST.find(x=>x.name===name)?.score||fSc(C);document.getElementById('view-search').style.display='none';const vf=document.getElementById('view-fiche');vf.style.display='block';if(chartI){chartI.destroy();chartI=null}const badges=D?D.badges.map(b=>`<span class="fbadge" style="background:${b.bg};color:${b.c}">${b.l}</span>`).join(''):'';let indH='';const SCALE_HTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:8px 12px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)"><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.06em;margin-right:4px">Échelle</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:#1A6B4A"><span style="width:7px;height:7px;border-radius:50%;background:#1A6B4A;display:inline-block"></span>Excellent</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:#2D9E6B"><span style="width:7px;height:7px;border-radius:50%;background:#2D9E6B;display:inline-block"></span>Bon</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:#B87A14"><span style="width:7px;height:7px;border-radius:50%;background:#B87A14;display:inline-block"></span>Correct</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:#C86A1A"><span style="width:7px;height:7px;border-radius:50%;background:#C86A1A;display:inline-block"></span>Insuffisant</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:#B83232"><span style="width:7px;height:7px;border-radius:50%;background:#B83232;display:inline-block"></span>Mauvais</span></div>`;if(D){indH=SCALE_HTML;Object.entries(D.inds).forEach(([cat,inds])=>{indH+=`<div class="ind-cat-t">${cat}</div><div class="ind-grid">`;inds.forEach(ind=>{const tip=TIPS[ind.l]||'';const dc=ind.col;indH+=`<div class="ind">${tip?`<div class="tip-popup"></div>`:''}<div class="ind-label-row"><div class="ind-l"><span>${ind.l}</span>${tip?`<span class="ind-tip" data-tip="${tip.replace(/"/g,'&quot;')}">?</span>`:''}</div></div><div class="ind-v">${ind.v}</div><div class="ind-eval"><div class="ind-dot" style="background:${dc}"></div><span class="ind-n" style="color:${dc}">${ind.n}</span></div></div>`});indH+='</div>'})}else{indH=`<div style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;padding:1rem;text-align:center">Fiche détaillée disponible avec les vraies données en production.</div>`}const risqH=D?`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:7px 10px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)"><span style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.06em">Niveau de risque</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:#2D9E6B"><span style="width:7px;height:7px;border-radius:50%;background:#2D9E6B;display:inline-block"></span>Faible</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:#B87A14"><span style="width:7px;height:7px;border-radius:50%;background:#B87A14;display:inline-block"></span>Modéré</span><span style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:'DM Mono',monospace;color:#B83232"><span style="width:7px;height:7px;border-radius:50%;background:#B83232;display:inline-block"></span>Élevé</span></div><div class="risq-grid">${D.risques.map(r=>{const tip=TIPS[r.l]||'';return`<div class="risq" style="position:relative">${tip?`<div class="tip-popup"></div>`:''}<div class="risq-l" style="display:flex;align-items:center;gap:4px">${r.l}${tip?`<span class="ind-tip" data-tip="${tip.replace(/"/g,'&quot;')}">?</span>`:''}</div><div class="risq-v"><div class="${r.t==='ok'?'dok':r.t==='warn'?'dwarn':'dbad'}"></div>${r.v}</div></div>`}).join('')}</div>`:`<div style="font-size:12px;color:var(--text2)">Données disponibles en production.</div>`;
+// Calcul scores par catégorie pour synthèse
+const catScores={sec:catScore(C,'sec'),vie:catScore(C,'vie'),srv:catScore(C,'srv'),eco:catScore(C,'eco')};
+const dotSyn=(s)=>s>=75?'#1A6B4A':s>=60?'#2D9E6B':s>=45?'#B87A14':s>=30?'#C86A1A':'#B83232';
+const lblSyn=(s)=>s>=75?'Excellent':s>=60?'Bon':s>=45?'Correct':s>=30?'Insuffisant':'Mauvais';
+const catRows=[
+  {l:'🔴 Sécurité',k:'sec'},
+  {l:'🔵 Cadre de vie',k:'vie'},
+  {l:'🟢 Services',k:'srv'},
+  {l:'🟤 Économie',k:'eco'},
+].map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text2)">${r.l}</span><div style="display:flex;align-items:center;gap:6px"><div style="width:7px;height:7px;border-radius:50%;background:${dotSyn(catScores[r.k])}"></div><span style="font-size:12px;font-family:'DM Mono',monospace;font-weight:500;color:${dotSyn(catScores[r.k])}">${lblSyn(catScores[r.k])}</span><span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;width:28px;text-align:right">${catScores[r.k]}/100</span></div></div>`).join('');
+const keyFacts=D?[
+  `Prix médian ${ST.bien==='appart'?'appart':'maison'} : <strong>${(ST.bien==='appart'?C.pA:C.pM).toLocaleString('fr-FR')} €/m²</strong>`,
+  `Évolution sur 5 ans : <strong>${C.evol>=0?'+':''}${C.evol}%</strong> — ${C.evol>=15?'Marché très dynamique':C.evol>=8?'Progression modérée':'Marché stable'}`,
+  `Taxe foncière moyenne : <strong>${C.taxe.toLocaleString('fr-FR')} €/an</strong> — ${C.taxe>1300?'Élevée':C.taxe>900?'Dans la moyenne':'Faible'}`,
+  `Population : <strong>${C.pop.toLocaleString('fr-FR')} habitants</strong> · Densité : <strong>${(C.dens||0).toLocaleString('fr-FR')} hab/km²</strong>`,
+  `Dynamisme démographique : <strong>${C.evolPop>=0?'+':''}${C.evolPop}%</strong> sur 5 ans — ${C.evolPop>=3?'Commune très attractive':C.evolPop>=1?'En croissance':C.evolPop>=0?'Population stable':'Commune qui perd des habitants'}`,
+]:'';
+const profileMatch=D?[
+  {p:'👨‍👧 Famille',match:catScores.sec>=60&&catScores.srv>=60},
+  {p:'🎒 Jeune actif',match:catScores.eco>=55&&catScores.srv>=55},
+  {p:'🧓 Retraité',match:catScores.sec>=65&&catScores.vie>=60},
+  {p:'🌱 Éco-responsable',match:catScores.vie>=65},
+  {p:'💼 Investisseur',match:C.evol>=12},
+].filter(x=>x.match).map(x=>x.p):'';
+
+// === SCORE EXPLAIN — décomposition pédagogique ===
+const explainAct=getAct();
+let scoreExplainH='';
+if(explainAct.length){
+  // Calculer la contribution simulée de chaque catégorie sélectionnée
+  const seedExp=C.name.charCodeAt(0)*7+C.name.charCodeAt(1)*3;
+  const catContribs={};
+  explainAct.forEach((x,i)=>{
+    const w=(ST.wgt[x.cat+x.lbl]||(x.pri===1?80:40))*(x.pri===1?0.7:0.3);
+    const v=50+((seedExp+i*17)%48);
+    if(!catContribs[x.cat])catContribs[x.cat]={cn:x.cn,ci:x.ci,pri:x.pri,sumW:0,sumScore:0,count:0};
+    catContribs[x.cat].sumW+=w;
+    catContribs[x.cat].sumScore+=v;
+    catContribs[x.cat].count++;
+  });
+  const totalW=Object.values(catContribs).reduce((a,c)=>a+c.sumW,0)||1;
+  const catList=Object.entries(catContribs).map(([k,c])=>({k,...c,pct:Math.round(c.sumW/totalW*100),avgScore:Math.round(c.sumScore/c.count)}));
+  // Trier par contribution
+  catList.sort((a,b)=>b.sumW-a.sumW);
+  // Top forces / faiblesses
+  const sortedByPerf=[...catList].sort((a,b)=>b.avgScore-a.avgScore);
+  const forces=sortedByPerf.slice(0,Math.min(2,sortedByPerf.length)).filter(x=>x.avgScore>=65);
+  const faiblesses=sortedByPerf.slice(-Math.min(2,sortedByPerf.length)).reverse().filter(x=>x.avgScore<55);
+  const p1Count=explainAct.filter(x=>x.pri===1).length;
+  const p2Count=explainAct.filter(x=>x.pri===2).length;
+  scoreExplainH=`<div class="score-explain">
+    <div class="score-explain-title">📐 Comment ce score est-il calculé ?</div>
+    <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.6;margin-bottom:10px">Vous avez sélectionné <strong>${p1Count} critère${p1Count>1?'s':''} principal${p1Count>1?'aux':''}</strong>${p2Count>0?` et <strong>${p2Count} secondaire${p2Count>1?'s':''}</strong>`:''}. Voici comment chacun pèse dans le score :</div>
+    ${catList.map(c=>`<div class="score-row"><div class="score-row-name"><span>${c.ci}</span> ${c.cn} <span style="font-size:9px;padding:1px 6px;border-radius:8px;background:${c.pri===1?'var(--green-light)':'var(--amber-pale)'};color:${c.pri===1?'var(--green)':'var(--amber)'};margin-left:4px">${c.pri===1?'principal':'secondaire'}</span></div><div class="score-row-pct">${c.pct}% du score</div></div>`).join('')}
+    ${forces.length||faiblesses.length?`<div class="score-explain-prose">
+      ${forces.length?`<div style="margin-bottom:6px"><strong style="color:var(--green)">✓ Cette commune marque sur :</strong> ${forces.map(f=>f.ci+' '+f.cn).join(', ')}</div>`:''}
+      ${faiblesses.length?`<div><strong style="color:var(--red)">⚠ Elle perd des points sur :</strong> ${faiblesses.map(f=>f.ci+' '+f.cn).join(', ')}</div>`:''}
+    </div>`:''}
+  </div>`;
+}else{
+  scoreExplainH=`<div class="score-explain">
+    <div class="score-explain-title">📐 Comment ce score est-il calculé ?</div>
+    <div style="font-size:12px;color:var(--text2);font-family:'DM Sans',sans-serif;line-height:1.6">Vous n'avez pas sélectionné de critères spécifiques. Le score affiché est calculé sur l'ensemble des indicateurs disponibles. Pour une analyse personnalisée, retournez aux résultats et choisissez les catégories qui comptent pour vous.</div>
+  </div>`;
+}
+
+// Données politiques
+const P=POL[name]||(D&&D.pol?D.pol:null);
+const partiColor=(parti)=>{const m={'Parti Socialiste':'#E05020','Les Républicains':'#0066CC','La République En Marche':'#FFEB00','Renaissance':'#FFEB00','Rassemblement National':'#003189','La France Insoumise':'#CC2443','Europe Écologie':'#4A9A4A','Divers droite':'#4A8CC8','Divers gauche':'#D04040','Union de la Gauche':'#CC2443','Divers centre':'#8888CC','Divers':'#888888'};return m[parti]||'#8888AA'};
+const polH=P?`
+<div class="politic-notice">⚠️ Ces données sont présentées à titre informatif et n'influencent pas le score de qualité de vie. Source : Ministère de l'Intérieur · data.gouv.fr</div>
+<div class="politic-section">
+  <div class="politic-title">Maire en exercice</div>
+  <div class="politic-mayor">
+    <div class="politic-mayor-avatar">🏛️</div>
+    <div>
+      <div class="politic-mayor-name">${P.maire.nom}</div>
+      <div class="politic-mayor-sub">Mandat ${P.maire.mandat}</div>
+      <div class="politic-badge" style="background:${partiColor(P.maire.parti)}22;color:${partiColor(P.maire.parti)};border:1px solid ${partiColor(P.maire.parti)}44">${P.maire.parti}</div>
+    </div>
+  </div>
+</div>
+<div class="politic-section">
+  <div class="vote-grid">
+    <div class="vote-card" style="grid-column:1/-1">
+      <div class="vote-card-title" style="margin-bottom:12px">🗳️ Présidentielle 2022</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)">1er tour — top 3</div>
+          ${P.pres2022_t1?P.pres2022_t1.map(r=>'<div class="vote-row"><div class="vote-color" style="background:'+r.col+';border:1px solid rgba(0,0,0,0.1)"></div><div class="vote-label" title="'+r.c+'">'+r.c+'</div><div class="vote-bar-wrap"><div class="vote-bar-fill" style="width:'+r.pct+'%;background:'+r.col+'"></div></div><div class="vote-pct">'+r.pct+'%</div></div>').join(''):'N/D'}
+          <div class="vote-participation"><span>Participation</span><span style="font-weight:500;color:var(--text)">${P.participation_pres_t1||'N/D'}%</span></div>
+        </div>
+        <div>
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)">2ème tour — duel final</div>
+          ${P.presidentielle2022.map(r=>'<div class="vote-row"><div class="vote-color" style="background:'+r.col+';border:1px solid rgba(0,0,0,0.1)"></div><div class="vote-label" title="'+r.c+'">'+r.c+'</div><div class="vote-bar-wrap"><div class="vote-bar-fill" style="width:'+r.pct+'%;background:'+r.col+'"></div></div><div class="vote-pct">'+r.pct+'%</div></div>').join('')}
+          <div class="vote-participation"><span>Participation</span><span style="font-weight:500;color:var(--text)">${P.participation_pres}%</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="vote-card">
+      <div class="vote-card-title">Municipales 2020 — Liste gagnante</div>
+      <div style="padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:8px">
+        <div style="font-size:12px;font-weight:500;color:var(--text);font-family:'DM Sans',sans-serif;margin-bottom:4px">${P.municipales2020.tete}</div>
+        <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-bottom:6px">${P.municipales2020.liste}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="width:${P.municipales2020.pct}%;height:100%;background:${P.municipales2020.col};border-radius:4px"></div></div>
+          <div style="font-size:13px;font-weight:600;font-family:'DM Mono',monospace;color:${P.municipales2020.col}">${P.municipales2020.pct}%</div>
+        </div>
+      </div>
+      <div class="vote-participation"><span>Participation</span><span style="font-weight:500;color:var(--text)">${P.participation_mun}%</span></div>
+    </div>
+  </div>
+</div>
+<div class="politic-section">
+  <div class="politic-title">Tendance politique historique</div>
+  <div class="tendance-strip">
+    <div class="tendance-dot" style="background:${P.tendance.col}"></div>
+    <div class="tendance-label">${P.tendance.label}</div>
+    <div class="tendance-years">depuis ${P.tendance.depuis}</div>
+  </div>
+`:`<div style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;padding:1rem;text-align:center">Données politiques disponibles pour Marseille, Aix-en-Provence et Aubagne.</div>`;
+const avisH=D?`<div style="display:flex;flex-direction:column;gap:12px">
+<div style="background:var(--bg);border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border)">
+  <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;margin-bottom:8px">Score global · ${score}/100</div>
+  <div style="font-size:26px;font-weight:600;color:${dotSyn(score)};font-family:'DM Serif Display',serif;margin-bottom:10px">${score} <span style="font-size:13px;font-weight:400;color:${dotSyn(score)}">${lblSyn(score)}</span></div>
+  ${catRows}
+</div>
+${scoreExplainH}
+<div style="background:var(--bg);border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border)">
+  <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;margin-bottom:10px">Radar qualité de vie</div>
+  <div class="radar-wrap"><canvas id="radar-chart"></canvas></div>
+  <script>setTimeout(()=>{const rc=document.getElementById('radar-chart');if(!rc)return;if(window._radarChart){window._radarChart.destroy()}window._radarChart=new Chart(rc,{type:'radar',data:{labels:['Sécurité','Cadre de vie','Services','Économie'],datasets:[{data:[${catScores.sec},${catScores.vie},${catScores.srv},${catScores.eco}],backgroundColor:'rgba(26,107,74,0.12)',borderColor:'#2D9E6B',borderWidth:2,pointBackgroundColor:'#2D9E6B',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,ticks:{display:false,stepSize:25},grid:{color:'rgba(0,0,0,0.06)'},pointLabels:{font:{size:10,family:"'DM Mono',monospace"}}}}}})},200)<\/script>
+</div>
+${keyFacts.length?`<div style="background:var(--bg);border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;margin-bottom:8px">À savoir avant d'acheter</div>${keyFacts.map(f=>`<div style="font-size:12px;color:var(--text2);padding:5px 0;border-bottom:1px solid var(--border);line-height:1.5;font-family:'DM Sans',sans-serif">${f}</div>`).join('')}</div>`:''}
+${profileMatch.length?`<div style="background:var(--sage-light);border-radius:var(--radius);padding:12px 14px;border:1px solid rgba(122,158,142,0.25)"><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;margin-bottom:8px">Profils compatibles</div><div style="display:flex;flex-wrap:wrap;gap:6px">${profileMatch.map(p=>`<span style="background:var(--white);border:1px solid var(--border2);border-radius:20px;padding:4px 10px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text)">${p}</span>`).join('')}</div></div>`:''}
+<div class="avis-list">${D.avis.map(a=>`<div class="avis ${a.t}"><div class="avis-t">${a.ti}</div><div class="avis-tx">${a.tx}</div></div>`).join('')}</div>
+<div class="alert-banner">
+  <div class="alert-banner-icon">🔔</div>
+  <div style="flex:1">
+    <div style="font-size:12px;font-weight:500;font-family:'DM Mono',monospace;margin-bottom:2px">Alerte prix</div>
+    <div style="font-size:11px;color:var(--text2)">Recevez une notification si le prix/m² à ${name} évolue selon vos critères.</div>
+    <div class="alert-input-row">
+      <input type="number" placeholder="Prix cible €/m²" id="alert-price-${name.replace(/\s/g,'-')}" style="width:130px">
+      <button class="alert-btn" onclick="setAlert('${name}',this)">M'alerter</button>
+    </div>
+  </div>
+</div>
+</div>`:'';
+const typeL=C.type.charAt(0).toUpperCase()+C.type.slice(1);
+// "Vs ma commune" — compare avec d'autres communes dans LAST
+const vsCommune=LAST.filter(x=>x.name!==name).slice(0,3);
+const vsH=vsCommune.length?`<div class="vs-wrap"><div class="vs-title">📊 Comparé aux autres résultats</div><table style="width:100%;border-collapse:collapse;font-size:11px;font-family:'DM Mono',monospace"><thead><tr><td style="padding:4px 8px;color:var(--text3);font-size:9px;text-transform:uppercase;letter-spacing:0.06em"></td><td style="padding:4px 8px;color:var(--blue-mid);font-weight:500">${name}</td>${vsCommune.map(x=>`<td style="padding:4px 8px;color:var(--text2)">${x.name}</td>`).join('')}</tr></thead><tbody>${[{l:'Score',k:'score',f:v=>v+'/100',better:'high'},{l:'Prix m²',k:'prix',f:v=>v.toLocaleString('fr-FR')+' €',better:'low'},{l:'Évol. 5 ans',k:'evol',f:v=>(v>=0?'+':'')+v+'%',better:'high'},{l:'Taxe fonc.',k:'taxe',f:v=>v.toLocaleString('fr-FR')+' €',better:'low'}].map(row=>{const baseVal=row.k==='score'?score:row.k==='prix'?C[ST.bien==='appart'?'pA':'pM']:C[row.k];return`<tr style="border-top:1px solid var(--border)"><td style="padding:5px 8px;color:var(--text3)">${row.l}</td><td style="padding:5px 8px;font-weight:500;color:var(--text)">${row.f(baseVal)}</td>${vsCommune.map(x=>{const xval=row.k==='score'?x.score:row.k==='prix'?x.prix:x[row.k];const diff=xval-baseVal;const better=row.better==='high'?diff>0:diff<0;const cls=diff===0?'':better?'delta-pos':'delta-neg';const sign=diff>0?'+':'';return`<td style="padding:5px 8px">${row.f(xval)}<div class="${cls}">${diff!==0?sign+diff+(row.k==='evol'?'%':row.k==='score'?'pts':' €'):''}</div></td>`}).join('')}</tr>`}).join('')}</tbody></table></div>`:'';
+vf.innerHTML=`<button class="back-btn" onclick="closeFiche()">← Retour aux résultats</button>
+<div class="fhero"><div class="fhero-top"><div><div class="fhero-name">${name}</div><div class="fhero-sub">${C.dept} · ${C.region} · ${typeL}</div><div class="fhero-badges">${badges}</div></div><div style="flex-shrink:0;text-align:right"><div class="score-big-n">${score}</div><div class="score-big-l" style="display:flex;align-items:center;gap:4px;justify-content:flex-end">score / 100 <span class="ind-tip" data-tip="Score de qualité de vie (0-100) calculé selon vos critères. 1 clic = priorité forte, 2 clics = secondaire. Données indicatives.">?</span></div><div class="score-big-bar"><div class="score-big-fill" style="width:${score}%"></div></div></div></div>
+<div class="fkpis"><div class="fkpi"><div class="fkpi-l">Prix maison</div><div class="fkpi-v">${C.pM.toLocaleString('fr-FR')} €</div><div class="fkpi-s">par m² · DVF 2024</div></div><div class="fkpi"><div class="fkpi-l">Prix appartement</div><div class="fkpi-v">${C.pA.toLocaleString('fr-FR')} €</div><div class="fkpi-s">par m² · DVF 2024</div></div><div class="fkpi"><div class="fkpi-l">Évolution 5 ans</div><div class="fkpi-v up">+${C.evol} %</div><div class="fkpi-s">depuis 2019</div></div><div class="fkpi"><div class="fkpi-l">Taxe foncière</div><div class="fkpi-v">${C.taxe.toLocaleString('fr-FR')} €</div><div class="fkpi-s">estimation / an · T3</div></div><div class="fkpi"><div class="fkpi-l">Population</div><div class="fkpi-v">${C.pop.toLocaleString('fr-FR')}</div><div class="fkpi-s">habitants · INSEE</div></div><div class="fkpi"><div class="fkpi-l">Densité</div><div class="fkpi-v">${(C.dens||0).toLocaleString('fr-FR')}</div><div class="fkpi-s">hab/km² · INSEE</div></div><div class="fkpi"><div class="fkpi-l">Dyn. démographique</div><div class="fkpi-v ${C.evolPop>=0?'up':'down'}">${C.evolPop>=0?'+':''}${C.evolPop} %</div><div class="fkpi-s">évol. pop. 5 ans · INSEE</div></div></div></div>
+<div class="fsec" id="fsec-onglets"><div class="ftabs"><button class="ftab on" onclick="swFT(this,'ft-ind')">📊 Qualité de vie</button><button class="ftab" onclick="swFT(this,'ft-prix')">📈 Prix immobilier</button><button class="ftab" onclick="swFT(this,'ft-risq')">⚠️ Risques naturels & environnement</button><button class="ftab" onclick="swFT(this,'ft-avis')">💡 Mon analyse</button><button class="ftab" onclick="swFT(this,'ft-pol')">🗳️ Vie politique</button></div>
+<div class="ftc on" id="ft-ind">${indH}</div>
+<div class="ftc" id="ft-prix"><div class="chart-wrap"><canvas id="pc"></canvas></div><div style="display:flex;gap:14px;margin-top:8px"><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-family:'DM Mono',monospace"><div style="width:10px;height:3px;background:var(--green-mid);border-radius:2px"></div>Maison</div><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-family:'DM Mono',monospace"><div style="width:10px;height:3px;background:#4A7CC7;border-radius:2px"></div>Appartement</div></div></div>
+<div class="ftc" id="ft-risq">${risqH}</div>
+<div class="ftc" id="ft-avis">${avisH||'<div style="font-size:12px;color:var(--text2)">Synthèse disponible en production.</div>'}</div>
+<div class="ftc" id="ft-pol">${polH}</div>
+</div>
+${vsH}
+<div class="fsec"><div style="font-size:13px;font-weight:500;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace">📍 Localisation</div><div id="map-leaflet"></div><script>setTimeout(()=>{if(window._leafletMap){window._leafletMap.remove();window._leafletMap=null}const mc=CD.find(x=>x.name===name);if(mc&&mc.lat){const m=L.map('map-leaflet').setView([mc.lat,mc.lng],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(m);const icon=L.divIcon({html:'<div style="background:var(--green);color:#fff;font-size:11px;font-family:DM Mono,monospace;padding:4px 8px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2)">📍 '+mc.name+'</div>',className:'',iconAnchor:[40,12]});L.marker([mc.lat,mc.lng],{icon}).addTo(m);window._leafletMap=m}},200)<\/script></div>
+<div class="fsec"><div style="font-size:13px;font-weight:500;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace">💬 Avis des habitants</div>
+<div style="background:var(--bg);border-radius:var(--radius);padding:16px;border:1px dashed var(--border2);text-align:center">
+  <div style="font-size:20px;margin-bottom:6px">✍️</div>
+  <div style="font-size:12px;font-weight:500;font-family:'DM Mono',monospace;margin-bottom:4px">Vous connaissez ${name} ?</div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5">Partagez votre expérience avec la communauté — qualité de vie, transports, voisinage, ce que les données ne montrent pas.</div>
+  <button style="padding:8px 16px;font-size:11px;font-family:'DM Mono',monospace;background:var(--green);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-weight:500;opacity:0.7;cursor:not-allowed" disabled>Laisser un avis · Compte requis <span style="font-size:10px;opacity:0.8">(bientôt)</span></button>
+</div>
+<div style="margin-top:10px;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;text-align:center">Les avis seront vérifiés et modérés. Seuls les résidents vérifiés pourront noter.</div>
+</div>
+<div class="fsec"><div style="font-size:13px;font-weight:500;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace">🔗 Actions</div><div class="cta-g"><button class="fcta fcta-p" onclick="exportPDF()">📄 Exporter cette fiche en PDF</button><button class="fcta fcta-s" onclick="goToCompare('${name}')">⚖️ Ajouter à ma comparaison</button></div><div class="cta-g" style="margin-top:8px"><button class="fcta fcta-s" disabled style="opacity:0.45;cursor:not-allowed" title="Bientôt disponible">🏠 Voir les annonces (bientôt)</button><button class="fcta fcta-s" disabled style="opacity:0.45;cursor:not-allowed" title="Bientôt disponible">🗺️ Explorer les quartiers (bientôt)</button></div></div>`;
+
+if(D){setTimeout(()=>{const ctx=document.getElementById('pc');if(!ctx)return;chartI=new Chart(ctx,{type:'line',data:{labels:D.prix.labels,datasets:[{label:'Maison',data:D.prix.maison,borderColor:'#2D9E6B',backgroundColor:'rgba(45,158,107,0.06)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#2D9E6B',tension:0.3},{label:'Appartement',data:D.prix.appart,borderColor:'#4A7CC7',backgroundColor:'rgba(74,124,199,0.06)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#4A7CC7',tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+' : '+c.raw.toLocaleString('fr-FR')+' €/m²'}}},scales:{y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11,family:"'DM Mono',monospace"},callback:v=>v.toLocaleString('fr-FR')+' €'}},x:{grid:{display:false},ticks:{font:{size:11,family:"'DM Mono',monospace"}}}}}})},150)}
+window.scrollTo(0,0)}
+function closeFiche(){if(chartI){chartI.destroy();chartI=null}if(window._radarChart){window._radarChart.destroy();window._radarChart=null}if(window._leafletMap){window._leafletMap.remove();window._leafletMap=null}document.getElementById('view-fiche').style.display='none';document.getElementById('view-fiche').innerHTML='';document.getElementById('view-search').style.display='block';window.scrollTo(0,0)}
+function setAlert(name,btn){const inp=document.getElementById('alert-price-'+name.replace(/\s/g,'-'));const val=inp?inp.value:'';if(!val||isNaN(val)){inp&&(inp.style.borderColor='var(--red)');return}inp.style.borderColor='var(--border2)';btn.textContent='✓ Alerte enregistrée';btn.style.background='var(--green)';btn.disabled=true;btn.style.cursor='default'}
+function exportPDF(){window.print()}
+// === BARRE DE RECHERCHE NAV ===
+let navSearchIdx=-1, navSearchResults=[];
+function navSearchIn(v){
+  const dd=document.getElementById('navSearchDd');
+  const cl=document.getElementById('navSearchClear');
+  cl.classList.toggle('show', v.length>0);
+  if(v.length<1){dd.classList.remove('open');return}
+  const q=v.toLowerCase().trim();
+  navSearchResults=CD.filter(c=>c.name.toLowerCase().includes(q)||c.dept.toLowerCase().includes(q)).slice(0,8);
+  navSearchIdx=-1;
+  if(!navSearchResults.length){
+    dd.innerHTML=`<div class="nav-search-empty">Aucune commune trouvée pour "${v}"<br><span style="font-size:10px;opacity:0.7">16 communes PACA disponibles dans le proto</span></div>`;
+    dd.classList.add('open');return;
+  }
+  dd.innerHTML=navSearchResults.map((c,i)=>`<div class="nav-search-item" onclick="navSearchGo('${c.name}')"><div><div class="nav-search-item-name">${c.name}</div><div class="nav-search-item-dept">${c.dept}</div></div><span style="font-size:10px;color:var(--text3)">↵</span></div>`).join('');
+  dd.classList.add('open');
+}
+function navSearchKey(e){
+  const items=document.querySelectorAll('#navSearchDd .nav-search-item');
+  if(e.key==='ArrowDown'){navSearchIdx=Math.min(navSearchIdx+1,items.length-1);items.forEach((x,i)=>x.classList.toggle('active',i===navSearchIdx));e.preventDefault()}
+  else if(e.key==='ArrowUp'){navSearchIdx=Math.max(navSearchIdx-1,0);items.forEach((x,i)=>x.classList.toggle('active',i===navSearchIdx));e.preventDefault()}
+  else if(e.key==='Enter'){if(navSearchIdx>=0&&navSearchResults[navSearchIdx])navSearchGo(navSearchResults[navSearchIdx].name);else if(navSearchResults.length===1)navSearchGo(navSearchResults[0].name)}
+  else if(e.key==='Escape'){document.getElementById('navSearchDd').classList.remove('open');document.getElementById('navSearch').blur()}
+}
+function navSearchGo(name){
+  document.getElementById('navSearch').value='';
+  document.getElementById('navSearchClear').classList.remove('show');
+  document.getElementById('navSearchDd').classList.remove('open');
+  if(!LAST||!LAST.length){LAST=CD.map(c=>({...c,score:fSc(c),prix:gP(c),dist:null}))}
+  if(document.getElementById('screen-expert').classList.contains('active')){openFiche(name)}
+  else{goExpert();setTimeout(()=>openFiche(name),100)}
+}
+function navSearchClear(){
+  document.getElementById('navSearch').value='';
+  document.getElementById('navSearchClear').classList.remove('show');
+  document.getElementById('navSearchDd').classList.remove('open');
+}
+function goToCompare(name){const exists=CMP.some(c=>c.name===name);if(!exists){const c=LAST.find(x=>x.name===name)||{...CD.find(x=>x.name===name),score:fSc(CD.find(x=>x.name===name)),prix:gP(CD.find(x=>x.name===name))};if(CMP.length<3)CMP.push(c)}closeFiche();goTab('c');upTC();rCmp()}
+function surpriseMe(){let pool=LAST&&LAST.length?LAST:CD.map(c=>({...c,score:fSc(c),prix:gP(c),dist:null}));if(!LAST||!LAST.length)LAST=pool;const rand=pool[Math.floor(Math.random()*pool.length)];openFiche(rand.name)}
+function rCmp(){const e=document.getElementById('cl');document.getElementById('ccnt').textContent=CMP.length===0?'Ajoutez jusqu\'à 3 communes':CMP.length+' commune'+(CMP.length>1?'s':'')+' comparée'+(CMP.length>1?'s':'');if(!CMP.length){e.innerHTML=`<div class="empty-s"><span>⚖</span>Aucune commune à comparer.<br>Cliquez sur "Comparer" dans les résultats.</div>`;return}const RWS=[{l:'Score',k:'score',f:v=>v+'/100',cmp:true},{l:'Prix m²',k:'prix',f:v=>v.toLocaleString('fr-FR')+' €',cmp:true,min:true},{l:'Évolution',k:'evol',f:v=>(v>=0?'+':'')+v+'%',cmp:true},{l:'Taxe fonc.',k:'taxe',f:v=>v.toLocaleString('fr-FR')+' €',cmp:true,min:true},{l:'Population',k:'pop',f:v=>v.toLocaleString('fr-FR')+' hab.',cmp:false},{l:'Densité',k:'dens',f:v=>(v||0).toLocaleString('fr-FR')+' /km²',cmp:false},{l:'Dyn. pop.',k:'evolPop',f:v=>(v>=0?'+':'')+v+'%',cmp:true},{l:'Type',k:'type',f:v=>v.charAt(0).toUpperCase()+v.slice(1),cmp:false}];const ths=CMP.map(c=>`<th>${c.name}<br><span style="font-size:10px;color:var(--text3);font-weight:400">${c.dept}</span><span class="frem" onclick="rmCmp('${c.name}')" style="float:right">×</span></th>`).join('');const trs=RWS.map(r=>{const vs=CMP.map(c=>c[r.k]);let bi=-1,wi=-1;if(r.cmp&&CMP.length>1){bi=vs.indexOf(r.min?Math.min(...vs):Math.max(...vs));wi=vs.indexOf(r.min?Math.max(...vs):Math.min(...vs))}const best=r.min?Math.min(...vs):Math.max(...vs);const tds=CMP.map((c,i)=>{let cl='';const delta=i>0&&r.cmp&&typeof vs[0]==='number'?vs[i]-vs[0]:null;let deltaH='';if(delta!==null&&delta!==0){const pos=r.min?delta<0:delta>0;deltaH=`<div class="${pos?'delta-pos':'delta-neg'}">${delta>0?'+':''}${r.k==='score'?delta+'pts':delta.toLocaleString('fr-FR')+(r.k==='evol'?'%':' €')}</div>`}if(r.cmp&&CMP.length>1){if(i===bi)cl=" class='best-c'";else if(i===wi)cl=" class='worst-c'"}return`<td${cl}>${r.f(c[r.k])}${deltaH}</td>`}).join('');return`<tr><td class="rl">${r.l}</td>${tds}</tr>`}).join('');e.innerHTML=`<div class="cmp-table"><table><thead><tr><th></th>${ths}</tr></thead><tbody>${trs}</tbody></table></div><div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:8px">Les deltas (↑↓) sont calculés par rapport à la première commune ajoutée.</div>`}
+function swFT(btn,id){const sec=document.getElementById('fsec-onglets');sec.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));sec.querySelectorAll('.ftc').forEach(t=>t.classList.remove('on'));btn.classList.add('on');document.getElementById(id).classList.add('on');if(id==='ft-prix'&&chartI)setTimeout(()=>chartI.resize(),50)}
+document.addEventListener('click',e=>{if(!e.target.closest('.dd-wrap'))document.getElementById('dd').classList.remove('open');if(!e.target.closest('.nav-search'))document.getElementById('navSearchDd').classList.remove('open')});
+// Marquer dirty sur changement des filtres avancés
+['txm','pm','tf','sb'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('change',()=>setDirty(true))});
+// === TOOLTIP GLOBAL — desktop hover + mobile tap ===
+(function(){
+  const tip=document.getElementById('gtip');
+  let activeTipEl=null;
+
+  function showTipAt(el, x, y){
+    tip.textContent=el.dataset.tip;
+    tip.style.display='block';
+    const tw=tip.offsetWidth, th=tip.offsetHeight;
+    const px=Math.max(10, Math.min(x-10, window.innerWidth-tw-10));
+    const py=Math.max(10, y-th-14);
+    tip.style.left=px+'px';
+    tip.style.top=py+'px';
+  }
+
+  function hideTip(){
+    tip.style.display='none';
+    activeTipEl=null;
+  }
+
+  // --- Desktop : hover ---
+  document.addEventListener('mouseover',e=>{
+    const el=e.target.closest('.ind-tip[data-tip]');
+    if(!el)return;
+    activeTipEl=el;
+    const r=el.getBoundingClientRect();
+    showTipAt(el, r.left+r.width/2, r.top);
+  });
+  document.addEventListener('mousemove',e=>{
+    if(tip.style.display==='none')return;
+    const el=e.target.closest('.ind-tip[data-tip]');
+    if(el)showTipAt(el, e.clientX, e.clientY);
+  });
+  document.addEventListener('mouseout',e=>{
+    if(e.target.closest('.ind-tip[data-tip]'))hideTip();
+  });
+
+  // --- Mobile / tap : click toggle ---
+  document.addEventListener('click',e=>{
+    const el=e.target.closest('.ind-tip[data-tip]');
+    if(el){
+      e.preventDefault();
+      e.stopPropagation();
+      if(activeTipEl===el){hideTip()}
+      else{
+        activeTipEl=el;
+        const r=el.getBoundingClientRect();
+        showTipAt(el, r.left+r.width/2, r.top);
+      }
+    }else if(activeTipEl){
+      // Click ailleurs → ferme
+      hideTip();
+    }
+  });
+
+  // Fermer au scroll sur mobile
+  document.addEventListener('scroll',()=>{if(activeTipEl)hideTip()},true);
+})();
+rCards();rFav();rCmp();
+rBassinChips();
+setDirty(true);upResetBtnVisibility();
+</script>
+</body>
+</html>
